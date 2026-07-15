@@ -1,0 +1,1394 @@
+:root {
+  /* 全站色彩、圓角、陰影等設計變數；要換主題色優先改這裡。 */
+  --bg: #0b1020;
+  --panel: rgba(16, 24, 39, 0.94);
+  --panel-2: rgba(24, 34, 53, 0.96);
+  --line: rgba(166, 180, 204, 0.18);
+  --text: #f4f7fb;
+  --muted: #a8b5c8;
+  --accent: #2563eb;
+  --accent-2: #0f9f6e;
+  --danger: #dc2626;
+  --radius: 8px;
+  --shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  /* 頁面底色與全站字體。 */
+  margin: 0;
+  font-family: "Noto Sans TC", system-ui, sans-serif;
+  color: var(--text);
+  background:
+    linear-gradient(180deg, rgba(37, 99, 235, 0.16), transparent 280px),
+    linear-gradient(135deg, #070b14, var(--bg) 50%, #121827);
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+}
+
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+img { display: block; }
+#app { min-height: 100vh; }
+
+.shell {
+  /* 整個 app 的主框架：上方工具列、篩選列、主要內容。 */
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  overflow: hidden;
+}
+
+.topbar {
+  /* 最上方品牌列與功能按鈕。 */
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 16px;
+  background: rgba(5, 9, 17, 0.78);
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(14px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.brand {
+  /* 左上角 Battle Spirits 品牌區。 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 900;
+  min-width: 240px;
+}
+
+.brand > div:last-child > div:first-child {
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.brand-badge {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius);
+  background: linear-gradient(135deg, #b91c1c, #f59e0b);
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow);
+}
+
+.muted { color: var(--muted); font-size: 12px; line-height: 1.35; }
+
+.toolbar {
+  /* 右上角瀏覽、管理、登入、匯出、清空按鈕。 */
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.status {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid var(--line);
+  background: rgba(148, 163, 184, 0.08);
+  font-size: 13px;
+}
+
+.status.ok { color: #86efac; }
+.status.warn { color: #fbbf24; }
+
+.button, .search, .mini {
+  /* 共用按鈕、搜尋框、小按鈕的基礎外觀。 */
+  border: 1px solid var(--line);
+  background: rgba(9, 14, 25, 0.78);
+  color: var(--text);
+  border-radius: var(--radius);
+}
+
+.button {
+  min-height: 34px;
+  padding: 0 12px;
+}
+
+.source-button {
+  min-height: 28px;
+  padding: 0 10px;
+  border-color: rgba(15, 23, 42, 0.12);
+  background: #fff;
+  color: #111827;
+  font-size: 12px;
+}
+
+.source-button.dark {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: #111827;
+  color: #fff;
+}
+
+.icon-button {
+  width: 42px;
+  min-width: 42px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+}
+
+.button:hover, .mini:hover {
+  border-color: rgba(255, 255, 255, 0.36);
+}
+
+.button.primary {
+  background: linear-gradient(135deg, var(--accent), #1d4ed8);
+  border-color: transparent;
+}
+
+.button.danger {
+  background: linear-gradient(135deg, var(--danger), #991b1b);
+  border-color: transparent;
+}
+
+.button.ghost {
+  background: rgba(148, 163, 184, 0.08);
+  border-color: var(--line);
+}
+
+.filters {
+  /* 篩選列外框：左側搜尋、右側多選篩選與重置。 */
+  display: grid;
+  grid-template-columns: minmax(240px, 0.36fr) minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-2);
+}
+
+.filter-search {
+  /* 篩選列左側搜尋區。 */
+  min-width: 0;
+}
+
+.filter-controls {
+  /* 篩選列右側控制區，靠右排列。 */
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.search {
+  border: 1px solid var(--line);
+  background: rgba(9, 14, 25, 0.78);
+  color: var(--text);
+  border-radius: var(--radius);
+  min-height: 36px;
+  padding: 0 12px;
+  width: 100%;
+  max-width: 280px;
+}
+
+.filter-dropdown {
+  /* 單一多選下拉篩選器的定位容器。 */
+  position: relative;
+}
+
+.filter-button {
+  /* 多選篩選器按鈕，例如「顏色 (2)」。 */
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(55, 65, 81, 0.82);
+  color: var(--text);
+  white-space: nowrap;
+}
+
+.filter-button.active {
+  border-color: #60a5fa;
+  background: rgba(37, 99, 235, 0.25);
+}
+
+.chevron {
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 7px solid currentColor;
+  transform: translateY(1px);
+}
+
+.filter-menu {
+  /* 多選下拉選單本體。 */
+  position: absolute;
+  z-index: 35;
+  top: calc(100% + 8px);
+  left: 0;
+  width: max-content;
+  min-width: 190px;
+  max-width: 280px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: var(--radius);
+  background: #374151;
+  box-shadow: var(--shadow);
+}
+
+.filter-dropdown-cost .filter-menu {
+  min-width: 152px;
+  max-width: 224px;
+}
+
+.filter-option {
+  /* 下拉選單內每一列 checkbox 選項。 */
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 8px;
+  border-radius: 6px;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.filter-option:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.filter-option input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--accent);
+}
+
+.filter-empty {
+  color: var(--muted);
+  padding: 8px;
+}
+
+.reset-filter-btn {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #fca5a5;
+  border-color: var(--line);
+  background: rgba(55, 65, 81, 0.82);
+}
+
+.button.ghost.reset-filter-btn {
+  border-color: var(--line);
+  background: rgba(55, 65, 81, 0.82);
+}
+
+.reset-filter-btn span {
+  display: inline-grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  background: #0369a1;
+  color: #fff;
+  font-size: 11px;
+  line-height: 1;
+}
+
+@media (min-width: 901px) {
+  .filter-button,
+  .reset-filter-btn {
+    min-height: 30px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 14px;
+  }
+}
+
+.main {
+  /* 主要內容：左側卡片列表，右側牌組或收合 rail。 */
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 306px;
+  gap: 14px;
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  padding: 0 14px 14px;
+}
+
+.main.deck-collapsed {
+  /* 牌組收合時：卡片列表 + 右側窄 rail。 */
+  grid-template-columns: minmax(0, 1fr) 48px;
+}
+
+.main.admin-main,
+.main.admin-main.deck-collapsed {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.catalog, .deck, .panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
+.catalog {
+  /* 卡片列表面板，內部獨立滾動。 */
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-height: 0;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.catalog-body {
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.section-head, .panel-head, .deck-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.section-head { margin-bottom: 14px; }
+.section-head h2 {
+  margin: 0;
+  font-size: 18px;
+} 
+.section-head h3, .panel-head h3 { margin: 0; }
+
+.notice {
+  margin-bottom: 12px;
+  padding: 12px;
+  border: 1px solid rgba(251, 191, 36, 0.28);
+  border-radius: var(--radius);
+  background: rgba(251, 191, 36, 0.09);
+  color: #fde68a;
+}
+
+.card-grid {
+  /* 桌機版卡片列表：固定一行兩張。 */
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 14px;
+  flex: 0 0 auto;
+  min-height: 0;
+  overflow: visible;
+  padding-right: 4px;
+}
+
+.card {
+  /* 單張卡片橫向資訊卡：左圖右文字。 */
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  gap: 10px;
+  padding: 10px;
+  align-items: start;
+  border-radius: var(--radius);
+  border: 1.5px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.84);
+  min-width: 0;
+}
+
+/* 卡片邊框色：依資料表 color 欄位套用。 */
+.card-color-red { border-color: rgba(239, 68, 68, 0.72); }
+.card-color-purple { border-color: rgba(168, 85, 247, 0.72); }
+.card-color-green { border-color: rgba(34, 197, 94, 0.72); }
+.card-color-white { border-color: rgba(229, 231, 235, 0.72); }
+.card-color-yellow { border-color: rgba(234, 179, 8, 0.78); }
+.card-color-blue { border-color: rgba(59, 130, 246, 0.72); }
+.card-color-default { border-color: rgba(148, 163, 184, 0.28); }
+
+.card-color-red:hover { border-color: rgba(248, 113, 113, 0.95); }
+.card-color-purple:hover { border-color: rgba(192, 132, 252, 0.95); }
+.card-color-green:hover { border-color: rgba(74, 222, 128, 0.95); }
+.card-color-white:hover { border-color: rgba(255, 255, 255, 0.95); }
+.card-color-yellow:hover { border-color: rgba(250, 204, 21, 0.95); }
+.card-color-blue:hover { border-color: rgba(96, 165, 250, 0.95); }
+
+.card-image {
+  /* 卡片圖比例固定為 Battle Spirits 卡圖比例。 */
+  width: 150px;
+  aspect-ratio: 63 / 88;
+  object-fit: cover;
+  border-radius: var(--radius);
+  background: #0f172a;
+}
+
+.card-body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  text-align: left;
+  min-height: 100%;
+}
+
+.card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  align-items: center;
+}
+
+.card-number, .deck-item-code, .preview-code {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.card-number {
+  font-size: 15px;
+}
+
+.card h3 {
+  margin: 2px 0 6px;
+  font-size: 15px;
+  line-height: 1.28;
+}
+
+.tags {
+  /* 卡片上的顏色、種類、系統、費用等小標籤。 */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+
+.tag {
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 0;
+  background: rgba(37, 99, 235, 0.68);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.tag-prefix {
+  background: rgba(37, 99, 235, 0.72);
+}
+
+.tag-type {
+  background: #16a34a;
+  color: #f0fdf4;
+}
+
+.tag-suffix {
+  background: rgba(109, 40, 217, 0.72);
+}
+
+.effect {
+  white-space: pre-wrap;
+  line-height: 1.48;
+  font-size: 14px;
+  color: #e6eefc;
+  margin: 0;
+}
+
+.card .effect {
+  /* 列表中的效果文字完整顯示，卡片高度會依內容自然撐開。 */
+  display: block;
+  overflow: visible;
+}
+
+.card-actions, .admin-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 10px;
+  flex-wrap: wrap;
+}
+
+.admin-actions {
+  margin-top: 12px;
+  padding-top: 0;
+}
+
+.admin-import {
+  display: grid;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.visit-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.visit-stat {
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(148, 163, 184, 0.08);
+}
+
+.visit-stat span {
+  display: block;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.visit-stat strong {
+  display: block;
+  margin-top: 6px;
+  color: #93c5fd;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.import-file-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: max-content;
+}
+
+.import-file-btn input {
+  display: none;
+}
+
+.card-actions .button { flex: 1 1 120px; }
+
+.card-actions .button {
+  min-height: 0;
+  height: auto;
+  padding-top: 4px;
+  padding-bottom: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.deck {
+  /* 右側牌組面板；手機版會覆寫成底部抽屜。 */
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  align-self: stretch;
+  height: 100%;
+  min-height: 0;
+  max-height: 100%;
+  overflow: hidden;
+  padding: 14px;
+}
+
+.deck.is-hidden {
+  display: none;
+}
+
+.deck-head {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.deck-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.deck-head-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.deck-head .button {
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.deck-head .button.danger {
+  color: #ef4444;
+}
+
+.deck-head .icon-button {
+  width: 40px;
+  min-width: 40px;
+}
+
+.deck-collapse-btn {
+  background: var(--accent);
+  border-color: transparent;
+}
+
+.deck-collapse-btn:hover {
+  background: #1d4ed8;
+  border-color: transparent;
+}
+
+.deck-collapse-btn::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-left: 11px solid #fff;
+  transform: translateX(1px);
+}
+
+.deck-rail {
+  /* 牌組收合後的右側窄 rail，顯示箭頭與目前張數。 */
+  width: 48px;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: var(--shadow);
+  display: grid;
+  grid-template-rows: 42px 1fr 42px;
+  align-items: center;
+  justify-items: center;
+  padding: 12px 6px;
+}
+
+.deck-rail span {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--accent);
+  position: relative;
+}
+
+.deck-rail span,
+.deck-rail strong {
+  pointer-events: none;
+}
+
+.deck-rail span::before {
+  content: "";
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-bottom: 8px solid transparent;
+  border-right: 11px solid #fff;
+  transform: translateX(-1px);
+}
+
+.deck-rail strong {
+  grid-row: 2;
+  font-size: 18px;
+  line-height: 1;
+}
+
+.count-badge {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--accent);
+  font-size: 18px;
+  line-height: 1;
+}
+
+.deck-summary {
+  /* 牌組三種類型統計：戰魂、核心、魔法。 */
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.summary-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5em;
+  width: 100%;
+  padding: 0.25em 0.7em;
+  text-align: center;
+  border-radius: var(--radius);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+  font-size: 15px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.summary-box strong {
+  display: inline;
+  margin: 0;
+  font-size: 16px;
+  color: #ef4444;
+}
+
+.deck-list {
+  /* 牌組清單，數量多時這裡獨立滾動。 */
+  overflow: auto;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  padding-right: 4px;
+}
+
+.deck-preview-btn {
+  width: 100%;
+  margin-top: 12px;
+  font-weight: 900;
+  font-size: 14px;
+}
+
+.back-to-top {
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  z-index: 38;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.36);
+  background: rgba(15, 23, 42, 0.92);
+  box-shadow: var(--shadow);
+  display: grid;
+  place-items: center;
+}
+
+.back-to-top::before {
+  content: "";
+  width: 14px;
+  height: 14px;
+  border-left: 5px solid #facc15;
+  border-top: 5px solid #facc15;
+  transform: translateY(4px) rotate(45deg);
+  border-radius: 2px;
+}
+
+.back-to-top:hover {
+  border-color: rgba(250, 204, 21, 0.72);
+  background: rgba(30, 41, 59, 0.96);
+}
+
+.deck-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: var(--radius);
+  background: rgba(148, 163, 184, 0.08);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.deck-item[draggable="true"] {
+  cursor: grab;
+}
+
+.deck-item.is-dragging {
+  cursor: grabbing;
+  opacity: 0.55;
+}
+
+.deck-item.is-drag-over {
+  border-color: #60a5fa;
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.deck-item-code {
+  font-size: 13px;
+}
+
+.deck-item-name {
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-item-controls {
+  display: inline-grid;
+  grid-template-columns: 26px 24px 26px;
+  align-items: center;
+  text-align: center;
+  font-size: 13px;
+}
+
+.mini {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  font-size: 13px;
+}
+
+.empty {
+  color: var(--muted);
+  text-align: center;
+  padding: 42px 10px;
+}
+
+.empty.small { padding: 24px 8px; }
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: 14px;
+}
+
+.panel { padding: 14px; }
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.admin-table-scroll {
+  max-height: 455px;
+  margin-top: 12px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.admin-table th, .admin-table td {
+  border-bottom: 1px solid var(--line);
+  padding: 9px 8px;
+  text-align: left;
+}
+
+.admin-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--panel);
+}
+
+.sort-actions {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.sort-actions .mini:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.set-row[draggable="true"] {
+  cursor: grab;
+}
+
+.set-row.is-dragging {
+  cursor: grabbing;
+  opacity: 0.55;
+}
+
+.set-row.is-drag-over {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.modal-backdrop {
+  /* 卡片詳情與牌組預覽共用的黑色遮罩。 */
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.72);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.modal {
+  width: min(1080px, 100%);
+  max-height: 92vh;
+  overflow: auto;
+  border-radius: var(--radius);
+  background: linear-gradient(180deg, rgba(18, 27, 45, 0.98), rgba(10, 16, 28, 0.98));
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.modal-grid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.modal-detail {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.modal-grid img {
+  width: 100%;
+  border-radius: var(--radius);
+}
+
+.modal-close-btn {
+  width: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0;
+  border-radius: 10px;
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.modal-grid h3 {
+  margin: -11px 0 10px;
+  font-size: 28px;
+  letter-spacing: 0;
+}
+
+.modal-card-number {
+  margin: 0;
+  font-size: 28px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.modal-effect {
+  margin: 12px 0;
+  padding: 14px;
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.modal-add-btn {
+  align-self: flex-end;
+  margin-top: auto;
+  min-width: 160px;
+}
+
+.preview-modal { width: min(980px, 100%); }
+
+.preview-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.preview-grid {
+  /* 牌組預覽中的卡圖排列。 */
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.preview-item {
+  position: relative;
+  text-align: center;
+}
+
+.preview-item img {
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  object-fit: cover;
+  border-radius: var(--radius);
+}
+
+.preview-count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.72);
+  font-weight: 900;
+}
+
+.preview-code {
+  margin-top: 6px;
+  font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  /* 中等螢幕：牌組改到下方或收合 rail，卡圖略縮小避免擠壓。 */
+  .main { grid-template-columns: 1fr; }
+  .main.deck-collapsed { grid-template-columns: minmax(0, 1fr) 48px; }
+  .deck { min-height: 320px; }
+  .card { grid-template-columns: 122px minmax(0, 1fr); }
+  .card-image { width: 122px; }
+}
+
+@media (max-width: 760px) {
+  /* 手機版：卡片一行一張，牌組收合成底部 bar，展開為下方抽屜。 */
+  html, body { overflow: hidden; }
+
+  .topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar { justify-content: flex-start; }
+  .topbar, .main { padding-left: 12px; padding-right: 12px; }
+  .filters { margin-left: 0; margin-right: 0; }
+  .search {
+    max-width: none;
+    min-height: 30px;
+    padding-left: 9px;
+    padding-right: 9px;
+    font-size: 12px;
+  }
+  .main,
+  .main.deck-collapsed {
+    display: block;
+    padding-bottom: 48px;
+  }
+
+  .catalog {
+    height: 100%;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding-bottom: 18px;
+  }
+
+  .card {
+    grid-template-columns: 142px minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
+    min-height: auto;
+    height: auto;
+    align-items: start;
+  }
+
+  .card-image {
+    width: 142px;
+    height: auto;
+  }
+  .card h3 { font-size: 15px; }
+  .card-number { font-size: 15px; }
+  .tag { font-size: 12px; padding: 2px 6px; }
+  .effect {
+    width: 100%;
+    text-align: left;
+    align-self: flex-start;
+    font-size: 16px;
+    line-height: 1.42;
+  }
+  .card .effect { display: block; overflow: visible; }
+  .card-body {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start;
+    align-self: stretch;
+    min-height: 100%;
+  }
+  .card-actions {
+    width: 100%;
+    margin-top: auto;
+    padding-top: 8px;
+    flex-wrap: nowrap;
+  }
+  .card-actions .button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 0;
+    height: auto;
+    padding-top: 3px;
+    padding-bottom: 3px;
+    font-size: 7px;
+    line-height: 1.2;
+  }
+
+  .deck-rail {
+    position: fixed;
+    left: 18px;
+    right: 18px;
+    bottom: 10px;
+    z-index: 40;
+    width: auto;
+    height: 38px;
+    min-height: 0;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    align-items: center;
+    justify-items: center;
+    padding: 8px 46px 8px 12px;
+    border-radius: 12px;
+  }
+
+  .deck-rail span {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    transform: translateY(-50%);
+    grid-column: auto;
+    grid-row: auto;
+    width: 28px;
+    height: 28px;
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--accent);
+  }
+
+  .deck-rail span::before {
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 10px solid #fff;
+    border-top: 0;
+    transform: translateY(-1px);
+  }
+
+  .deck-rail strong {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    height: auto;
+    background: transparent;
+    font-size: 20px;
+  }
+
+  .deck {
+    position: fixed;
+    left: 18px;
+    right: 18px;
+    bottom: 0;
+    z-index: 45;
+    height: min(70vh, 560px);
+    max-height: calc(100vh - 80px);
+    padding: 16px;
+    border-radius: 18px 18px 0 0;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+  }
+
+  .back-to-top {
+    left: 22px;
+    bottom: 76px;
+    width: 34px;
+    height: 34px;
+    z-index: 38;
+  }
+
+  .back-to-top.is-deck-open {
+    display: none;
+  }
+
+  .back-to-top::before {
+    width: 9px;
+    height: 9px;
+    border-left-width: 4px;
+    border-top-width: 4px;
+    transform: translateY(3px) rotate(45deg);
+  }
+
+  .deck-head-actions {
+    gap: 12px;
+  }
+
+  .deck-head-actions #toggleDeckBtn {
+    background: #f97316;
+    border-color: transparent;
+  }
+
+  .deck::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    width: 46px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateX(-50%);
+  }
+
+  .deck-title {
+    font-size: 15px;
+    gap: 6px;
+  }
+  .deck-head .button {
+    min-height: 28px;
+    padding: 0 10px;
+    font-size: 15px;
+  }
+  .deck-head .icon-button {
+    width: 36px;
+    min-width: 36px;
+  }
+  .deck-collapse-btn::before {
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-top: 11px solid #fff;
+    border-bottom: 0;
+    transform: translateY(1px);
+  }
+  .count-badge {
+    min-width: 23px;
+    height: 23px;
+    padding: 0 7px;
+    font-size: 15px;
+  }
+  .deck-summary { margin: 12px 0 8px; }
+  .summary-box {
+    font-size: 13px;
+    padding: 0.2em 0.6em;
+  }
+  .summary-box strong { font-size: 14px; }
+  .deck-list { margin-bottom: 0; }
+  .deck-item { padding: 8px 10px; }
+  .deck-item-code { font-size: 12px; }
+  .deck-item-name { font-size: 12px; }
+  .deck-item-controls { grid-template-columns: 28px 24px 28px; font-size: 12px; }
+  .mini { width: 28px; height: 26px; font-size: 14px; font-weight: 900; }
+
+  .deck-preview-btn {
+    min-height: 40px;
+    border-radius: 12px;
+    font-size: 14px;
+  }
+
+  .modal {
+    padding-top: 15px;
+  }
+
+  .admin-grid, .modal-grid { grid-template-columns: 1fr; }
+  .preview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+  .modal-grid {
+    gap: 8px;
+  }
+  .modal-grid img {
+    width: 70%;
+    justify-self: center;
+  }
+  .modal-grid h3 {
+    margin: -18px 0 6px;
+    font-size: 16px;
+  }
+  .modal-detail .tags {
+    margin-bottom: 2px;
+  }
+  .modal-effect {
+    margin: 8px 0;
+  }
+  .modal .section-head h2 {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 520px) {
+  /* 小手機：搜尋與篩選滿版，卡圖與文字再縮小。 */
+.filters { align-items: stretch; }
+.filters { grid-template-columns: 1fr; }
+
+.hero {
+  display: none !important;
+}
+
+.filters {
+  margin-top: 0 !important;
+  gap: 5px;
+}
+  .status,
+  .toolbar .button {
+    min-height: 28px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 10px;
+  }
+
+  .filter-controls {
+    justify-content: flex-start;
+    align-items: center;
+    gap: 7px;
+  }
+  .search {
+    max-width: none;
+    min-height: 28px;
+    padding-left: 8px;
+    padding-right: 8px;
+    font-size: 9px;
+  }
+  .filter-dropdown {
+    width: auto;
+    flex: 0 0 auto;
+  }
+  .filter-button,
+  .reset-filter-btn {
+    width: auto;
+    min-width: 0;
+    min-height: 22px;
+    justify-content: center;
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 9px;
+  }
+
+  .reset-filter-btn {
+    align-self: center;
+    gap: 4px;
+  }
+
+  .reset-filter-btn span {
+    width: 11px;
+    height: 11px;
+    font-size: 9px;
+  }
+  .filter-menu {
+    width: max-content;
+    min-width: 160px;
+    max-width: min(280px, calc(100vw - 48px));
+  }
+
+  .filter-option {
+    gap: 7px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .filter-option input {
+    width: 13px;
+    height: 13px;
+  }
+  .card {
+    grid-template-columns: 110px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px;
+    min-height: auto;
+    height: auto;
+    align-items: start;
+  }
+  .card-image {
+    width: 110px;
+    height: auto;
+  }
+  .card h3, .card-number { font-size: 12px; }
+  .effect { font-size: 11px; }
+  .tag { font-size: 9px; }
+}

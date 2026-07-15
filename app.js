@@ -4,7 +4,6 @@
   const SUPABASE_ANON_KEY = config.supabaseAnonKey || "";
   const SUPABASE_TABLE = config.supabaseTable || "cards";
   const STORAGE_KEY = "bs-card-browser.deck.v5";
-  const VISITOR_STORAGE_KEY = "bs-card-browser.visitor-id.v1";
   const MAX_CARD_COPIES = 3;
 
   const db =
@@ -184,8 +183,7 @@
     if (!db) return;
 
     try {
-      const visitorId = getVisitorId();
-      const { data, error } = await db.rpc("register_site_visit", { p_visitor_id: visitorId });
+      const { data, error } = await db.rpc("register_site_visit");
       if (error) throw error;
 
       const stats = Array.isArray(data) ? data[0] : data;
@@ -196,15 +194,6 @@
     } catch (error) {
       console.warn("Visit stats unavailable:", error);
     }
-  }
-
-  function getVisitorId() {
-    let visitorId = localStorage.getItem(VISITOR_STORAGE_KEY);
-    if (!visitorId) {
-      visitorId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-      localStorage.setItem(VISITOR_STORAGE_KEY, visitorId);
-    }
-    return visitorId;
   }
 
   function normalizeCard(card) {

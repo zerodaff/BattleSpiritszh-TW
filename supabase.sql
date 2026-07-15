@@ -63,10 +63,10 @@ create table if not exists public.deck_cards (
 );
 
 create table if not exists public.site_visitors (
-  visitor_id text primary key,
-  first_seen timestamptz not null default now(),
-  last_seen timestamptz not null default now(),
-  last_visit_date date not null default current_date
+  id bigserial primary key,
+  page_url text not null default 'https://zerodaff.github.io/BattleSpiritszh-TW/',
+  visited_at timestamptz not null default now(),
+  visit_date date not null default ((now() at time zone 'Asia/Taipei')::date)
 );
 
 alter table public.sets enable row level security;
@@ -246,28 +246,26 @@ create trigger trg_deck_cards_updated_at
 before update on public.deck_cards
 for each row execute function public.set_updated_at();
 
-create or replace function public.register_site_visit(p_visitor_id text)
+create or replace function public.register_site_visit()
 returns table(total_visitors bigint, today_visitors bigint)
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  taipei_today date := (now() at time zone 'Asia/Taipei')::date;
 begin
-  insert into public.site_visitors (visitor_id, first_seen, last_seen, last_visit_date)
-  values (p_visitor_id, now(), now(), current_date)
-  on conflict (visitor_id)
-  do update set
-    last_seen = now(),
-    last_visit_date = current_date;
+  insert into public.site_visitors (page_url, visited_at, visit_date)
+  values ('https://zerodaff.github.io/BattleSpiritszh-TW/', now(), taipei_today);
 
   return query
   select
     (select count(*) from public.site_visitors)::bigint as total_visitors,
-    (select count(*) from public.site_visitors where last_visit_date = current_date)::bigint as today_visitors;
+    (select count(*) from public.site_visitors where visit_date = taipei_today)::bigint as today_visitors;
 end;
 $$;
 
-grant execute on function public.register_site_visit(text) to anon, authenticated;
+grant execute on function public.register_site_visit() to anon, authenticated;
 
 insert into public.sets (code, name, sort_order)
 values

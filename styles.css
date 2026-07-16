@@ -584,6 +584,17 @@ img { display: block; }
   line-height: 1.2;
 }
 
+.card-actions .button[data-action="view-card"] {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+
+.card-actions .button[data-action="view-card"]:hover {
+  border-color: #ef4444;
+  background: #ef4444;
+}
+
 .deck {
   /* 右側牌組面板；手機版會覆寫成底部抽屜。 */
   display: grid;

@@ -76,6 +76,7 @@
   const app = document.querySelector("#app");
   if (!app) return;
   let searchRenderTimer = null;
+  let isComposingSearch = false;
 
   init().catch((error) => {
     console.error(error);
@@ -429,6 +430,19 @@
     const nextScroller = document.querySelector(".catalog-body");
     if (nextScroller) nextScroller.scrollTo(scrollX, scrollY);
     else window.scrollTo(scrollX, scrollY);
+  }
+
+  function scheduleSearchRender() {
+    window.clearTimeout(searchRenderTimer);
+    searchRenderTimer = window.setTimeout(() => {
+      if (isComposingSearch) return;
+      renderPreservingScroll();
+      const searchInput = document.querySelector("#searchInput");
+      if (searchInput instanceof HTMLInputElement) {
+        searchInput.focus();
+        searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
+      }
+    }, 250);
   }
 
   function renderCatalog(cards) {
@@ -929,15 +943,22 @@
 
       if (target.id === "searchInput") {
         state.search = target.value;
+        if (!isComposingSearch) scheduleSearchRender();
+      }
+    });
+
+    document.addEventListener("compositionstart", (event) => {
+      if (event.target instanceof HTMLInputElement && event.target.id === "searchInput") {
+        isComposingSearch = true;
         window.clearTimeout(searchRenderTimer);
-        searchRenderTimer = window.setTimeout(() => {
-          renderPreservingScroll();
-          const searchInput = document.querySelector("#searchInput");
-          if (searchInput instanceof HTMLInputElement) {
-            searchInput.focus();
-            searchInput.setSelectionRange(searchInput.value.length, searchInput.value.length);
-          }
-        }, 250);
+      }
+    });
+
+    document.addEventListener("compositionend", (event) => {
+      if (event.target instanceof HTMLInputElement && event.target.id === "searchInput") {
+        isComposingSearch = false;
+        state.search = event.target.value;
+        scheduleSearchRender();
       }
     });
 

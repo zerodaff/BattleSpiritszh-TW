@@ -2,3 +2,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://zerodaff.github.io/BattleSpiritszh-TW/sitemap.xml
+Sitemap: https://zerodaff.github.io/BattleSpiritszh-TW/sitemap.txt

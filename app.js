@@ -605,13 +605,13 @@
     if (!state.previewOpen) return "";
 
     const items = state.deck
-      .map((item) => {
+      .map((item, index) => {
         const card = state.cardById.get(item.id);
         if (!card) return "";
 
         return `
-          <div class="preview-item">
-            <img src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.card_name)}" />
+          <div class="preview-item" draggable="true" data-deck-index="${index}" title="拖曳卡片可調整順序">
+            <img src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.card_name)}" draggable="false" />
             <div class="preview-count">x${item.count}</div>
             <div class="preview-code">${escapeHtml(card.card_number)}</div>
           </div>
@@ -963,7 +963,7 @@
     });
 
     document.addEventListener("dragstart", (event) => {
-      const item = event.target instanceof Element ? event.target.closest(".deck-item, .set-row") : null;
+      const item = event.target instanceof Element ? event.target.closest(".deck-item, .preview-item, .set-row") : null;
       if (!(item instanceof HTMLElement)) return;
 
       const type = item.classList.contains("set-row") ? "set" : "deck";
@@ -977,7 +977,7 @@
     });
 
     document.addEventListener("dragover", (event) => {
-      const item = event.target instanceof Element ? event.target.closest(".deck-item, .set-row") : null;
+      const item = event.target instanceof Element ? event.target.closest(".deck-item, .preview-item, .set-row") : null;
       if (!(item instanceof HTMLElement)) return;
       if (item.dataset.deckIndex === undefined && item.dataset.setIndex === undefined) return;
       event.preventDefault();
@@ -985,12 +985,12 @@
     });
 
     document.addEventListener("dragleave", (event) => {
-      const item = event.target instanceof Element ? event.target.closest(".deck-item, .set-row") : null;
+      const item = event.target instanceof Element ? event.target.closest(".deck-item, .preview-item, .set-row") : null;
       item?.classList.remove("is-drag-over");
     });
 
     document.addEventListener("drop", async (event) => {
-      const item = event.target instanceof Element ? event.target.closest(".deck-item, .set-row") : null;
+      const item = event.target instanceof Element ? event.target.closest(".deck-item, .preview-item, .set-row") : null;
       if (!(item instanceof HTMLElement)) return;
 
       event.preventDefault();
@@ -1006,7 +1006,7 @@
     });
 
     document.addEventListener("dragend", () => {
-      document.querySelectorAll(".deck-item.is-dragging, .deck-item.is-drag-over, .set-row.is-dragging, .set-row.is-drag-over").forEach((item) => {
+      document.querySelectorAll(".deck-item.is-dragging, .deck-item.is-drag-over, .preview-item.is-dragging, .preview-item.is-drag-over, .set-row.is-dragging, .set-row.is-drag-over").forEach((item) => {
         item.classList.remove("is-dragging", "is-drag-over");
       });
     });

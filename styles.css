@@ -1020,6 +1020,22 @@ img { display: block; }
   text-align: center;
 }
 
+.preview-item[draggable="true"] {
+  cursor: grab;
+  transition: opacity 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+
+.preview-item.is-dragging {
+  cursor: grabbing;
+  opacity: 0.45;
+}
+
+.preview-item.is-drag-over {
+  transform: translateY(-3px);
+  border-radius: var(--radius);
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
 .preview-item img {
   width: 100%;
   aspect-ratio: 63 / 88;

@@ -1083,7 +1083,14 @@ img { display: block; }
   .card-grid {
     grid-template-columns: 1fr;
     gap: 14px;
-    padding-bottom: 112px;
+    padding-bottom: 0;
+  }
+
+  .main:not(.admin-main) .catalog-body::after {
+    content: "";
+    display: block;
+    flex: 0 0 calc(112px + env(safe-area-inset-bottom));
+    width: 100%;
   }
 
   .card {

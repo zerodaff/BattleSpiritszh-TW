@@ -424,12 +424,17 @@
 
   function renderPreservingScroll() {
     const scroller = document.querySelector(".catalog-body");
+    const deckScroller = document.querySelector(".deck-list");
     const scrollX = scroller?.scrollLeft ?? window.scrollX;
     const scrollY = scroller?.scrollTop ?? window.scrollY;
+    const deckScrollX = deckScroller?.scrollLeft ?? 0;
+    const deckScrollY = deckScroller?.scrollTop ?? 0;
     render();
     const nextScroller = document.querySelector(".catalog-body");
+    const nextDeckScroller = document.querySelector(".deck-list");
     if (nextScroller) nextScroller.scrollTo(scrollX, scrollY);
     else window.scrollTo(scrollX, scrollY);
+    nextDeckScroller?.scrollTo(deckScrollX, deckScrollY);
   }
 
   function scheduleSearchRender() {

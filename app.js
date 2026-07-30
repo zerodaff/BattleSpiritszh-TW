@@ -47,6 +47,7 @@
     error: "",
     view: "browse",
     search: "",
+    cardSortMode: "default",
     filters: {
       set_code: [],
       type: [],
@@ -245,7 +246,7 @@
 
   function getVisibleCards() {
     const query = state.search.trim().toLowerCase();
-    const compareCards = createCardComparator();
+    const compareCards = createCardComparator(state.cardSortMode);
 
     return state.cards.filter((card) => {
       if (!matchesFilter("set_code", card.set_code)) return false;
@@ -263,7 +264,7 @@
     }).sort(compareCards);
   }
 
-  function createCardComparator() {
+  function createCardComparator(sortMode = "default") {
     const setOrder = setCodeOptions();
     const selectedSets = state.filters.set_code || [];
     const order = selectedSets.length ? selectedSets : setOrder;
@@ -277,6 +278,15 @@
       const normalizedSetB = setB === undefined ? Number.MAX_SAFE_INTEGER : setB;
       const numberA = parseCardNumberOrder(a.card_number);
       const numberB = parseCardNumberOrder(b.card_number);
+      if (sortMode === "cost-asc") {
+        const costA = Number.isFinite(Number(a.cost)) ? Number(a.cost) : Number.MAX_SAFE_INTEGER;
+        const costB = Number.isFinite(Number(b.cost)) ? Number(b.cost) : Number.MAX_SAFE_INTEGER;
+        if (costA !== costB) return costA - costB;
+        if (normalizedSetA !== normalizedSetB) return normalizedSetA - normalizedSetB;
+        if (numberA.group !== numberB.group) return numberA.group - numberB.group;
+        if (numberA.number !== numberB.number) return numberA.number - numberB.number;
+        return String(a.card_number || "").localeCompare(String(b.card_number || ""), "zh-Hant");
+      }
       if (numberA.group !== numberB.group) return numberA.group - numberB.group;
       if (normalizedSetA !== normalizedSetB) return normalizedSetA - normalizedSetB;
       if (numberA.number !== numberB.number) return numberA.number - numberB.number;
@@ -382,6 +392,7 @@
                     <input id="searchInput" class="search" placeholder="搜尋卡號、名稱、效果..." value="${escapeHtml(state.search)}" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" />
                   </div>
                   <div class="filter-controls">
+                    ${sortDropdownHtml()}
                     ${filterDropdownHtml("set_code", "編號", setCodes)}
                     ${filterDropdownHtml("color", "顏色", orderedValues("color", ["紅", "紫", "綠", "白", "黃", "藍"]))}
                     ${filterDropdownHtml("type", "種類", orderedValues("type", ["【戰魂】", "【核心】", "【魔法】"]))}
@@ -851,6 +862,10 @@
         const field = target.dataset.filter || "";
         state.openFilter = state.openFilter === field ? null : field;
         renderPreservingScroll();
+      } else if (action === "set-card-sort") {
+        state.cardSortMode = target.dataset.sortMode === "cost-asc" ? "cost-asc" : "default";
+        state.openFilter = null;
+        renderPreservingScroll();
       } else if (action === "auth") {
         if (state.authUser) {
           await db?.auth.signOut();
@@ -1019,6 +1034,7 @@
 
   function resetFilters() {
     state.search = "";
+    state.cardSortMode = "default";
     state.filters = {
       set_code: [],
       type: [],
@@ -1313,6 +1329,37 @@
           })
           .join("")}
       </select>
+    `;
+  }
+
+  function sortDropdownHtml() {
+    const options = [
+      { value: "default", label: "1.原本排序" },
+      { value: "cost-asc", label: "2.費用小到大" }
+    ]
+      .map(
+        ({ value, label }) => `
+          <button
+            class="sort-option ${state.cardSortMode === value ? "is-selected" : ""}"
+            data-action="set-card-sort"
+            data-sort-mode="${value}"
+            type="button"
+          >
+            <span class="sort-option-mark" aria-hidden="true">${state.cardSortMode === value ? "✓" : ""}</span>
+            <span>${label}</span>
+          </button>
+        `
+      )
+      .join("");
+
+    return `
+      <div class="filter-dropdown filter-dropdown-sort">
+        <button class="filter-button ${state.cardSortMode !== "default" ? "active" : ""}" data-action="toggle-filter" data-filter="sort" type="button">
+          <span>${state.cardSortMode === "cost-asc" ? "排序2" : "排序1"}</span>
+          <span class="chevron"></span>
+        </button>
+        ${state.openFilter === "sort" ? `<div class="filter-menu sort-menu">${options}</div>` : ""}
+      </div>
     `;
   }
 

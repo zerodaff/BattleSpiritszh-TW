@@ -279,6 +279,37 @@ img { display: block; }
   accent-color: var(--accent);
 }
 
+.sort-menu {
+  min-width: 168px;
+}
+
+.sort-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.sort-option:hover,
+.sort-option.is-selected {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.sort-option-mark {
+  width: 14px;
+  color: #93c5fd;
+  font-weight: 900;
+  text-align: center;
+}
+
 .filter-empty {
   color: var(--muted);
   padding: 8px;
@@ -1401,6 +1432,12 @@ img { display: block; }
   }
 
   .filter-option {
+    gap: 7px;
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .sort-option {
     gap: 7px;
     padding: 4px 6px;
     font-size: 11px;

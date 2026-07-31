@@ -651,7 +651,7 @@
                 <span>魔法<strong>${countDeckByType("魔法")}</strong></span>
               </div>
             </div>
-            <button class="button" data-action="close-deck-details">關閉</button>
+            <button class="button modal-close-btn" data-action="close-deck-details" aria-label="關閉">X</button>
           </div>
           <div class="card-grid deck-details-grid">${items || `<div class="empty small">尚未加入卡片</div>`}</div>
         </div>

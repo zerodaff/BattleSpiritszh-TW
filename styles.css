@@ -1117,6 +1117,10 @@ img { display: block; }
 }
 
 .deck-detail-count {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1;
   min-width: 34px;
   padding: 3px 8px;
   border-radius: 999px;
@@ -1126,6 +1130,14 @@ img { display: block; }
   font-weight: 900;
   line-height: 1.2;
   text-align: center;
+}
+
+.deck-detail-card {
+  position: relative;
+}
+
+.deck-detail-card .card-topline {
+  padding-right: 46px;
 }
 
 .preview-actions {
@@ -1507,6 +1519,11 @@ img { display: block; }
 
   .deck-details-summary strong {
     font-size: 11px;
+  }
+
+  .deck-detail-count {
+    top: 8px;
+    right: 8px;
   }
 
 .hero {

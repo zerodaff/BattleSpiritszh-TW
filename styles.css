@@ -1055,7 +1055,7 @@ img { display: block; }
 
 .preview-item.is-dragging {
   cursor: grabbing;
-  opacity: 0.45;
+  opacity: 0.2;
 }
 
 .preview-item.is-drag-over {

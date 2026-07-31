@@ -66,6 +66,7 @@
     profile: null,
     selectedCard: null,
     previewOpen: false,
+    deckDetailsOpen: false,
     deckCollapsed: true,
     adminImportStatus: "",
     visitStats: {
@@ -408,13 +409,17 @@
               <div class="summary-box">魔法<strong>${countDeckByType("魔法")}</strong></div>
             </div>
             <div class="deck-list">${renderDeckList()}</div>
-            <button class="button primary deck-preview-btn" data-action="open-preview">預覽牌組</button>
+            <div class="deck-view-actions">
+              <button class="button deck-view-btn" data-action="open-deck-details">牌組詳情</button>
+              <button class="button primary deck-view-btn" data-action="open-preview">牌組預覽</button>
+            </div>
           </aside>
           ${state.deckCollapsed ? `<button class="deck-rail" data-action="toggle-deck" aria-label="展開牌組"><span aria-hidden="true"></span><strong>(${deckTotal()})</strong></button>` : ""}`}
         </main>
       </div>
       ${state.view === "admin" ? "" : `<button class="back-to-top ${state.deckCollapsed ? "" : "is-deck-open"}" data-action="scroll-top" aria-label="回到最上面"></button>`}
       ${renderModal()}
+      ${renderDeckDetails()}
       ${renderPreview()}
     `;
   }
@@ -422,7 +427,7 @@
   function renderPreservingScroll() {
     const scroller = document.querySelector(".catalog-body");
     const deckScroller = document.querySelector(".deck-list");
-    const previewScroller = document.querySelector(".preview-modal");
+    const previewScroller = document.querySelector(".preview-modal, .deck-details-modal");
     const scrollX = scroller?.scrollLeft ?? window.scrollX;
     const scrollY = scroller?.scrollTop ?? window.scrollY;
     const deckScrollX = deckScroller?.scrollLeft ?? 0;
@@ -432,7 +437,7 @@
     render();
     const nextScroller = document.querySelector(".catalog-body");
     const nextDeckScroller = document.querySelector(".deck-list");
-    const nextPreviewScroller = document.querySelector(".preview-modal");
+    const nextPreviewScroller = document.querySelector(".preview-modal, .deck-details-modal");
     if (nextScroller) nextScroller.scrollTo(scrollX, scrollY);
     else window.scrollTo(scrollX, scrollY);
     nextDeckScroller?.scrollTo(deckScrollX, deckScrollY);
@@ -603,6 +608,44 @@
               <button class="button primary modal-add-btn" data-action="add-card" data-id="${escapeHtml(card.id)}">+ 加到牌組</button>
             </div>
           </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDeckDetails() {
+    if (!state.deckDetailsOpen) return "";
+
+    const items = state.deck
+      .map((item) => {
+        const card = state.cardById.get(item.id);
+        if (!card) return "";
+
+        return `
+          <article class="card deck-detail-card ${cardColorClass(card.color)}">
+            <img class="card-image" src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.card_name)}" loading="lazy" />
+            <div class="card-body">
+              <div class="card-topline">
+                <div class="card-number">${escapeHtml(card.card_number)}</div>
+                <div class="deck-detail-count">x${item.count}</div>
+              </div>
+              <h3>${escapeHtml(card.card_name)}</h3>
+              <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.suffix, "suffix")}</div>
+              <p class="effect">${escapeHtml(card.effect || "")}</p>
+            </div>
+          </article>
+        `;
+      })
+      .join("");
+
+    return `
+      <div class="modal-backdrop">
+        <div class="modal deck-details-modal" role="dialog" aria-modal="true" aria-labelledby="deckDetailsTitle">
+          <div class="section-head deck-details-head">
+            <h2 id="deckDetailsTitle">目前牌組詳情</h2>
+            <button class="button" data-action="close-deck-details">關閉</button>
+          </div>
+          <div class="card-grid deck-details-grid">${items || `<div class="empty small">尚未加入卡片</div>`}</div>
         </div>
       </div>
     `;
@@ -875,7 +918,12 @@
         state.deckCollapsed = !state.deckCollapsed;
         renderPreservingScroll();
       } else if (action === "open-preview") {
+        state.deckDetailsOpen = false;
         state.previewOpen = true;
+        renderPreservingScroll();
+      } else if (action === "open-deck-details") {
+        state.previewOpen = false;
+        state.deckDetailsOpen = true;
         renderPreservingScroll();
       } else if (action === "open-preview-image") {
         await openPreviewImage();
@@ -887,6 +935,9 @@
       } else if (action === "close-preview" || action === "close-modal") {
         state.previewOpen = false;
         state.selectedCard = null;
+        renderPreservingScroll();
+      } else if (action === "close-deck-details") {
+        state.deckDetailsOpen = false;
         renderPreservingScroll();
       } else if (action === "export-deck") {
         exportDeck();

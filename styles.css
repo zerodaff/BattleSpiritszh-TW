@@ -814,6 +814,18 @@ img { display: block; }
   font-size: 14px;
 }
 
+.deck-view-btn[data-action="open-deck-details"] {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #fff;
+}
+
+.deck-view-btn[data-action="open-deck-details"]:hover {
+  border-color: #ef4444;
+  background: #ef4444;
+  color: #fff;
+}
+
 .back-to-top {
   position: fixed;
   left: 22px;

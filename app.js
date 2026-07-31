@@ -1032,11 +1032,22 @@
       if (!Number.isInteger(fromIndex)) return;
 
       event.preventDefault();
+      const imageRect = image.getBoundingClientRect();
+      const dragImage = image.cloneNode(true);
+      dragImage.className = "preview-drag-image";
+      dragImage.setAttribute("aria-hidden", "true");
+      dragImage.style.width = `${imageRect.width}px`;
+      dragImage.style.height = `${imageRect.height}px`;
+      dragImage.style.left = `${event.clientX}px`;
+      dragImage.style.top = `${event.clientY}px`;
+      document.body.appendChild(dragImage);
+
       previewPointerDrag = {
         pointerId: event.pointerId,
         fromIndex,
         toIndex: fromIndex,
-        item
+        item,
+        dragImage
       };
       item.setPointerCapture?.(event.pointerId);
       item.classList.add("is-dragging");
@@ -1045,6 +1056,8 @@
     document.addEventListener("pointermove", (event) => {
       if (!previewPointerDrag || previewPointerDrag.pointerId !== event.pointerId) return;
       event.preventDefault();
+      previewPointerDrag.dragImage.style.left = `${event.clientX}px`;
+      previewPointerDrag.dragImage.style.top = `${event.clientY}px`;
 
       const hovered = document.elementFromPoint(event.clientX, event.clientY);
       const target = hovered?.closest(".preview-item");
@@ -1061,9 +1074,10 @@
     const finishPreviewPointerDrag = (event, cancelled = false) => {
       if (!previewPointerDrag || previewPointerDrag.pointerId !== event.pointerId) return;
 
-      const { fromIndex, toIndex, item } = previewPointerDrag;
+      const { fromIndex, toIndex, item, dragImage } = previewPointerDrag;
       previewPointerDrag = null;
       if (item.hasPointerCapture?.(event.pointerId)) item.releasePointerCapture(event.pointerId);
+      dragImage.remove();
       document.querySelectorAll(".preview-item.is-dragging, .preview-item.is-drag-over").forEach((element) => {
         element.classList.remove("is-dragging", "is-drag-over");
       });

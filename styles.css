@@ -1058,6 +1058,20 @@ img { display: block; }
   opacity: 0.2;
 }
 
+.preview-drag-image {
+  position: fixed;
+  z-index: 10000;
+  display: block;
+  margin: 0;
+  border-radius: var(--radius);
+  opacity: 0.82;
+  pointer-events: none;
+  transform: translate(-50%, -50%) scale(1.03);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.58), 0 0 0 3px rgba(255, 255, 255, 0.85);
+  transition: none;
+  will-change: left, top;
+}
+
 .preview-item.is-drag-over {
   transform: translateY(-3px);
   border-radius: var(--radius);

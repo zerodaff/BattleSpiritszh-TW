@@ -78,6 +78,7 @@
   if (!app) return;
   let searchRenderTimer = null;
   let isComposingSearch = false;
+  let previewPointerDrag = null;
 
   init().catch((error) => {
     console.error(error);
@@ -164,21 +165,6 @@
 
   function rebuildCardIndex() {
     state.cardById = new Map(state.cards.map((card) => [card.id, card]));
-    sortDeckByCardOrder();
-  }
-
-  function sortDeckByCardOrder() {
-    if (!state.deck.length || !state.cardById.size) return;
-
-    const compareCards = createCardComparator();
-    state.deck = [...state.deck].sort((a, b) => {
-      const cardA = state.cardById.get(a.id);
-      const cardB = state.cardById.get(b.id);
-      if (cardA && cardB) return compareCards(cardA, cardB);
-      if (cardA) return -1;
-      if (cardB) return 1;
-      return String(a.id).localeCompare(String(b.id), "zh-Hant", { numeric: true });
-    });
   }
 
   async function registerVisit() {
@@ -436,16 +422,21 @@
   function renderPreservingScroll() {
     const scroller = document.querySelector(".catalog-body");
     const deckScroller = document.querySelector(".deck-list");
+    const previewScroller = document.querySelector(".preview-modal");
     const scrollX = scroller?.scrollLeft ?? window.scrollX;
     const scrollY = scroller?.scrollTop ?? window.scrollY;
     const deckScrollX = deckScroller?.scrollLeft ?? 0;
     const deckScrollY = deckScroller?.scrollTop ?? 0;
+    const previewScrollX = previewScroller?.scrollLeft ?? 0;
+    const previewScrollY = previewScroller?.scrollTop ?? 0;
     render();
     const nextScroller = document.querySelector(".catalog-body");
     const nextDeckScroller = document.querySelector(".deck-list");
+    const nextPreviewScroller = document.querySelector(".preview-modal");
     if (nextScroller) nextScroller.scrollTo(scrollX, scrollY);
     else window.scrollTo(scrollX, scrollY);
     nextDeckScroller?.scrollTo(deckScrollX, deckScrollY);
+    nextPreviewScroller?.scrollTo(previewScrollX, previewScrollY);
   }
 
   function scheduleSearchRender() {
@@ -626,7 +617,7 @@
         if (!card) return "";
 
         return `
-          <div class="preview-item" draggable="true" data-deck-index="${index}" title="拖曳卡片可調整順序">
+          <div class="preview-item" data-deck-index="${index}" title="拖曳卡片可調整順序">
             <img src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.card_name)}" draggable="false" />
             <div class="preview-count">x${item.count}</div>
             <div class="preview-code">${escapeHtml(card.card_number)}</div>
@@ -1030,6 +1021,58 @@
         item.classList.remove("is-dragging", "is-drag-over");
       });
     });
+
+    document.addEventListener("pointerdown", (event) => {
+      if (event.pointerType === "mouse" && event.button !== 0) return;
+      const image = event.target instanceof Element ? event.target.closest(".preview-item img") : null;
+      const item = image?.closest(".preview-item");
+      if (!(item instanceof HTMLElement)) return;
+
+      const fromIndex = Number(item.dataset.deckIndex);
+      if (!Number.isInteger(fromIndex)) return;
+
+      event.preventDefault();
+      previewPointerDrag = {
+        pointerId: event.pointerId,
+        fromIndex,
+        toIndex: fromIndex,
+        item
+      };
+      item.setPointerCapture?.(event.pointerId);
+      item.classList.add("is-dragging");
+    });
+
+    document.addEventListener("pointermove", (event) => {
+      if (!previewPointerDrag || previewPointerDrag.pointerId !== event.pointerId) return;
+      event.preventDefault();
+
+      const hovered = document.elementFromPoint(event.clientX, event.clientY);
+      const target = hovered?.closest(".preview-item");
+      if (!(target instanceof HTMLElement)) return;
+
+      const toIndex = Number(target.dataset.deckIndex);
+      if (!Number.isInteger(toIndex)) return;
+
+      document.querySelectorAll(".preview-item.is-drag-over").forEach((item) => item.classList.remove("is-drag-over"));
+      target.classList.add("is-drag-over");
+      previewPointerDrag.toIndex = toIndex;
+    });
+
+    const finishPreviewPointerDrag = (event, cancelled = false) => {
+      if (!previewPointerDrag || previewPointerDrag.pointerId !== event.pointerId) return;
+
+      const { fromIndex, toIndex, item } = previewPointerDrag;
+      previewPointerDrag = null;
+      if (item.hasPointerCapture?.(event.pointerId)) item.releasePointerCapture(event.pointerId);
+      document.querySelectorAll(".preview-item.is-dragging, .preview-item.is-drag-over").forEach((element) => {
+        element.classList.remove("is-dragging", "is-drag-over");
+      });
+
+      if (!cancelled) reorderDeck(fromIndex, toIndex);
+    };
+
+    document.addEventListener("pointerup", (event) => finishPreviewPointerDrag(event));
+    document.addEventListener("pointercancel", (event) => finishPreviewPointerDrag(event, true));
   }
 
   function resetFilters() {
@@ -1250,9 +1293,8 @@
       if (item.count >= MAX_CARD_COPIES) return;
       item.count += 1;
     }
-    else state.deck.unshift({ id, count: 1 });
+    else state.deck.push({ id, count: 1 });
 
-    sortDeckByCardOrder();
     saveDeck();
     renderPreservingScroll();
   }

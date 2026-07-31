@@ -642,7 +642,15 @@
       <div class="modal-backdrop">
         <div class="modal deck-details-modal" role="dialog" aria-modal="true" aria-labelledby="deckDetailsTitle">
           <div class="section-head deck-details-head">
-            <h2 id="deckDetailsTitle">目前牌組詳情</h2>
+            <div class="deck-details-heading">
+              <h2 id="deckDetailsTitle">目前牌組詳情</h2>
+              <div class="deck-details-total"><span>[</span><strong>${deckTotal()}</strong><span>]</span></div>
+              <div class="deck-details-summary">
+                <span>戰魂<strong>${countDeckByType("戰魂")}</strong></span>
+                <span>核心<strong>${countDeckByType("核心")}</strong></span>
+                <span>魔法<strong>${countDeckByType("魔法")}</strong></span>
+              </div>
+            </div>
             <button class="button" data-action="close-deck-details">關閉</button>
           </div>
           <div class="card-grid deck-details-grid">${items || `<div class="empty small">尚未加入卡片</div>`}</div>

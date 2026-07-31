@@ -1057,8 +1057,59 @@ img { display: block; }
 }
 
 .deck-details-head {
+  align-items: center;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
+}
+
+.deck-details-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.deck-details-total {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 900;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.deck-details-total span {
+  color: #ff1f2d;
+}
+
+.deck-details-total strong {
+  color: #fff;
+  font-size: inherit;
+}
+
+.deck-details-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.deck-details-summary span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(148, 163, 184, 0.08);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.deck-details-summary strong {
+  color: #ef4444;
+  font-size: 15px;
 }
 
 .deck-details-grid {
@@ -1430,6 +1481,33 @@ img { display: block; }
   /* 小手機：搜尋與篩選滿版，卡圖與文字再縮小。 */
 .filters { align-items: stretch; }
 .filters { grid-template-columns: 1fr; }
+
+  .deck-details-head {
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .deck-details-heading {
+    gap: 7px;
+  }
+
+  .deck-details-heading h2 {
+    flex-basis: 100%;
+  }
+
+  .deck-details-summary {
+    gap: 5px;
+  }
+
+  .deck-details-summary span {
+    gap: 5px;
+    padding: 4px 7px;
+    font-size: 10px;
+  }
+
+  .deck-details-summary strong {
+    font-size: 11px;
+  }
 
 .hero {
   display: none !important;

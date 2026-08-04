@@ -301,8 +301,9 @@
     const cardValues = [String(card.system || ""), String(card.suffix || "")];
     const systemSelected = exceptField === "system" ? [] : state.filters.system || [];
     const suffixSelected = exceptField === "suffix" ? [] : state.filters.suffix || [];
+    const selectedValues = [...systemSelected, ...suffixSelected].map((value) => String(value || ""));
 
-    return [...systemSelected, ...suffixSelected].every((value) => cardValues.includes(String(value || "")));
+    return selectedValues.length === 0 || selectedValues.some((value) => cardValues.includes(value));
   }
 
   function matchesActiveFilters(card, exceptField = "") {

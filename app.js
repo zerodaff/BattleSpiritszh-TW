@@ -357,9 +357,7 @@
         <header class="topbar">
           <div class="brand">
             <div class="brand-badge">BS</div>
-            <div>
-              <div>Battle Spirits 卡牌中文化(標準)</div>
-            </div>
+            <h1>Battle Spirits 卡牌中文化(標準)</h1>
           </div>
           <div class="toolbar">
             <button class="button source-button" data-action="open-external" data-url="https://www.bandai-tcg-plus.com/deck_build?default_regulation=224&game_title_id=7&playable_regulation[]=224&selected_game_format=224">圖面來源:BANDAI TCG+ ↗</button>

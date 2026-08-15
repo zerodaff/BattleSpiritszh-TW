@@ -626,7 +626,11 @@
             <div class="card-body">
               <div class="card-topline">
                 <div class="card-number">${escapeHtml(card.card_number)}</div>
-                <div class="deck-detail-count">x${item.count}</div>
+                <div class="deck-detail-controls" aria-label="${escapeHtml(card.card_name)} 張數">
+                  <button class="mini" data-action="dec-deck" data-id="${escapeHtml(item.id)}">-</button>
+                  <span>${item.count}</span>
+                  <button class="mini" data-action="inc-deck" data-id="${escapeHtml(item.id)}">+</button>
+                </div>
               </div>
               <h3>${escapeHtml(card.card_name)}</h3>
               <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.suffix, "suffix")}</div>

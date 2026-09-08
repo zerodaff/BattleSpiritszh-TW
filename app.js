@@ -1,4 +1,4 @@
-﻿(() => {
+(() => {
   const config = window.APP_CONFIG || {};
   const SUPABASE_URL = config.supabaseUrl || "";
   const SUPABASE_ANON_KEY = config.supabaseAnonKey || "";
@@ -428,6 +428,12 @@
     const scroller = document.querySelector(".catalog-body");
     const deckScroller = document.querySelector(".deck-list");
     const previewScroller = document.querySelector(".preview-modal, .deck-details-modal");
+    const filterMenuScroll = new Map(
+      [...document.querySelectorAll("[data-filter-menu]")].map((menu) => [
+        menu.getAttribute("data-filter-menu"),
+        { left: menu.scrollLeft, top: menu.scrollTop }
+      ])
+    );
     const scrollX = scroller?.scrollLeft ?? window.scrollX;
     const scrollY = scroller?.scrollTop ?? window.scrollY;
     const deckScrollX = deckScroller?.scrollLeft ?? 0;
@@ -442,6 +448,10 @@
     else window.scrollTo(scrollX, scrollY);
     nextDeckScroller?.scrollTo(deckScrollX, deckScrollY);
     nextPreviewScroller?.scrollTo(previewScrollX, previewScrollY);
+    filterMenuScroll.forEach((position, field) => {
+      const nextMenu = document.querySelector(`[data-filter-menu="${CSS.escape(field)}"]`);
+      nextMenu?.scrollTo(position.left, position.top);
+    });
   }
 
   function scheduleSearchRender() {

@@ -35,6 +35,7 @@
       card_name: "赤巫 薔綾提耶兒",
       type: "【戰魂】",
       system: "<紅雲>",
+      infix: "",
       suffix: "<光焰>",
       effect: "Lv1-2『召喚時』公開自己的牌組上方3張卡。",
       color: "紅",
@@ -50,6 +51,7 @@
       card_name: "假面騎士EX-AID 無敵玩家",
       type: "【戰魂】",
       system: "<裝甲>",
+      infix: "",
       suffix: "<極致>",
       effect: "Lv1-2『召喚時』將對手的戰魂全部破壞。",
       color: "白",
@@ -68,6 +70,7 @@
       set_code: [],
       type: [],
       system: [],
+      infix: [],
       suffix: [],
       color: [],
       rarity: [],
@@ -221,6 +224,7 @@
       card_name: String(card.card_name || ""),
       type: String(card.type || ""),
       system: String(card.system || ""),
+      infix: String(card.infix || ""),
       suffix: String(card.suffix || ""),
       effect: normalizeTextBlock(card.effect || ""),
       color: String(card.color || ""),
@@ -264,13 +268,13 @@
     return state.cards.filter((card) => {
       if (!matchesFilter("set_code", card.set_code)) return false;
       if (!matchesFilter("type", card.type)) return false;
-      if (!matchesPrefixSuffixFilters(card)) return false;
+      if (!matchesAffixFilters(card)) return false;
       if (!matchesFilter("color", card.color)) return false;
       if (!matchesFilter("rarity", card.rarity)) return false;
       if (!matchesFilter("cost", String(card.cost))) return false;
       if (!query) return true;
 
-      return [card.card_number, card.card_name, card.effect, card.type, card.system, card.suffix, card.color]
+      return [card.card_number, card.card_name, card.effect, card.type, card.system, card.infix, card.suffix, card.color]
         .join(" ")
         .toLowerCase()
         .includes(query);
@@ -323,29 +327,30 @@
     return selected.length === 0 || selected.includes(String(value || ""));
   }
 
-  function matchesPrefixSuffixFilters(card, exceptField = "") {
-    const cardValues = [String(card.system || ""), String(card.suffix || "")];
+  function matchesAffixFilters(card, exceptField = "") {
+    const cardValues = [String(card.system || ""), String(card.infix || ""), String(card.suffix || "")];
     const systemSelected = exceptField === "system" ? [] : state.filters.system || [];
+    const infixSelected = exceptField === "infix" ? [] : state.filters.infix || [];
     const suffixSelected = exceptField === "suffix" ? [] : state.filters.suffix || [];
-    const selectedValues = [...systemSelected, ...suffixSelected].map((value) => String(value || ""));
+    const selectedValues = [...systemSelected, ...infixSelected, ...suffixSelected].map((value) => String(value || ""));
 
     return selectedValues.length === 0 || selectedValues.some((value) => cardValues.includes(value));
   }
 
   function matchesActiveFilters(card, exceptField = "") {
     const query = state.search.trim().toLowerCase();
-    const fields = ["set_code", "type", "system", "suffix", "color", "rarity", "cost"];
+    const fields = ["set_code", "type", "system", "infix", "suffix", "color", "rarity", "cost"];
 
     for (const field of fields) {
       if (field === exceptField) continue;
-      if (field === "system" || field === "suffix") continue;
+      if (field === "system" || field === "infix" || field === "suffix") continue;
       const value = field === "cost" ? String(card.cost) : card[field];
       if (!matchesFilter(field, value)) return false;
     }
-    if (!matchesPrefixSuffixFilters(card, exceptField)) return false;
+    if (!matchesAffixFilters(card, exceptField)) return false;
 
     if (!query) return true;
-    return [card.card_number, card.card_name, card.effect, card.type, card.system, card.suffix, card.color]
+    return [card.card_number, card.card_name, card.effect, card.type, card.system, card.infix, card.suffix, card.color]
       .join(" ")
       .toLowerCase()
       .includes(query);
@@ -441,6 +446,7 @@
                     ${filterDropdownHtml("color", "顏色", orderedValues("color", ["紅", "紫", "綠", "白", "黃", "藍"]))}
                     ${filterDropdownHtml("type", "種類", orderedValues("type", ["【戰魂】", "【核心】", "【魔法】"]))}
                     ${filterDropdownHtml("system", "前綴", uniqueValues("system", false, false))}
+                    ${filterDropdownHtml("infix", "中綴", uniqueValues("infix", false, false))}
                     ${filterDropdownHtml("suffix", "後綴", uniqueValues("suffix", false, false))}
                     ${filterDropdownHtml("rarity", "稀有度", orderedValues("rarity", ["X", "M", "R", "C"]))}
                     ${filterDropdownHtml("cost", "費用", uniqueValues("cost", true, false))}
@@ -540,7 +546,7 @@
             <div class="card-number">${escapeHtml(card.card_number)}</div>
           </div>
           <h3>${escapeHtml(card.card_name)}</h3>
-          <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.suffix, "suffix")}</div>
+          <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.infix, "infix")}${pill(card.suffix, "suffix")}</div>
           <p class="effect">${escapeHtml(card.effect || "")}</p>
           <div class="card-actions">
             <button class="button primary" data-action="add-card" data-id="${escapeHtml(card.id)}">+ 加到牌組</button>
@@ -672,7 +678,7 @@
                 <button class="button modal-close-btn" data-action="close-modal" aria-label="關閉">×</button>
               </div>
               <h3>${escapeHtml(card.card_name)}</h3>
-              <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.suffix, "suffix")}</div>
+              <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.infix, "infix")}${pill(card.suffix, "suffix")}</div>
               <p class="effect modal-effect">${escapeHtml(card.effect || "")}</p>
               <button class="button primary modal-add-btn" data-action="add-card" data-id="${escapeHtml(card.id)}">+ 加到牌組</button>
             </div>
@@ -703,7 +709,7 @@
                 </div>
               </div>
               <h3>${escapeHtml(card.card_name)}</h3>
-              <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.suffix, "suffix")}</div>
+              <div class="tags">${pill(card.type, "type")}${pill(card.system, "prefix")}${pill(card.infix, "infix")}${pill(card.suffix, "suffix")}</div>
               <p class="effect">${escapeHtml(card.effect || "")}</p>
             </div>
           </article>
@@ -1234,6 +1240,7 @@
       set_code: [],
       type: [],
       system: [],
+      infix: [],
       suffix: [],
       color: [],
       rarity: [],
@@ -1269,6 +1276,9 @@
 
   function formatImportError(error) {
     const message = error?.message || "未知錯誤";
+    if (message.includes("infix")) {
+      return "Supabase 尚未建立中綴欄位。請先在 SQL Editor 執行 infix-migration.sql，再重新匯入。";
+    }
     if (message.includes("set_category") || message.includes("set_section")) {
       return "Supabase 尚未建立卡包分類欄位。請先在 SQL Editor 執行 set-classification-migration.sql，再重新匯入。";
     }
@@ -1310,6 +1320,7 @@
       card_name: value("CardName"),
       type: value("Type"),
       system: value("System"),
+      infix: value("Infix"),
       suffix: value("Suffix"),
       effect: value("Effect"),
       color: value("Color"),
@@ -1328,12 +1339,13 @@
       card_name: normalizeTextBlock(row[3] ?? ""),
       type: normalizeTextBlock(row[4] ?? ""),
       system: normalizeTextBlock(row[5] ?? ""),
-      suffix: normalizeTextBlock(row[6] ?? ""),
-      effect: normalizeTextBlock(row[7] ?? ""),
-      color: normalizeTextBlock(row[8] ?? ""),
-      image_url: normalizeTextBlock(row[9] ?? ""),
-      set_category: normalizeTextBlock(row[10] ?? ""),
-      set_section: normalizeTextBlock(row[11] ?? ""),
+      infix: normalizeTextBlock(row[6] ?? ""),
+      suffix: normalizeTextBlock(row[7] ?? ""),
+      effect: normalizeTextBlock(row[8] ?? ""),
+      color: normalizeTextBlock(row[9] ?? ""),
+      image_url: normalizeTextBlock(row[10] ?? ""),
+      set_category: normalizeTextBlock(row[11] ?? ""),
+      set_section: normalizeTextBlock(row[12] ?? ""),
       sheetName
     });
   }
@@ -1347,6 +1359,7 @@
       card_name: card.card_name,
       type: card.type,
       system: card.system,
+      infix: card.infix,
       suffix: card.suffix,
       effect: card.effect,
       color: card.color,

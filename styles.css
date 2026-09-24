@@ -597,6 +597,11 @@ img { display: block; }
   background: rgba(37, 99, 235, 0.72);
 }
 
+.tag-infix {
+  background: #ea580c;
+  color: #fff;
+}
+
 .tag-type {
   background: #16a34a;
   color: #f0fdf4;

@@ -266,9 +266,9 @@ img { display: block; }
 }
 
 .set-filter-menu {
-  width: 250px;
-  min-width: 250px;
-  max-width: min(320px, calc(100vw - 32px));
+  width: 220px;
+  min-width: 220px;
+  max-width: min(256px, calc(100vw - 32px));
   padding: 8px;
 }
 
@@ -598,7 +598,7 @@ img { display: block; }
 }
 
 .tag-infix {
-  background: #ea580c;
+  background: #c2410c;
   color: #fff;
 }
 
@@ -1674,8 +1674,8 @@ img { display: block; }
   }
 
   .set-filter-menu {
-    width: min(250px, calc(100vw - 32px));
-    min-width: min(250px, calc(100vw - 32px));
+    width: min(220px, calc(100vw - 32px));
+    min-width: min(220px, calc(100vw - 32px));
   }
 
   .set-filter-category-title {

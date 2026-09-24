@@ -417,7 +417,7 @@
             <h1>BS中文｜Battle Spirits 卡牌中文化(標準)</h1>
           </div>
           <div class="toolbar">
-            <button class="button source-button dark" data-action="open-external" data-url="https://myship.7-11.com.tw/general/detail/GM2609065930585">單卡販售 ↗</button>
+            <button class="button source-button shop-button" data-action="open-external" data-url="https://myship.7-11.com.tw/general/detail/GM2609065930585">單卡販售 ↗</button>
             <button class="button source-button" data-action="open-external" data-url="https://www.bandai-tcg-plus.com/deck_build?default_regulation=224&game_title_id=7&playable_regulation[]=224&selected_game_format=224">圖面來源:BANDAI TCG+ ↗</button>
             <button class="button source-button dark" data-action="open-external" data-url="https://www.facebook.com/profile.php?id=61585394820761">翻譯來源: 橘子的tcg翻譯花盆 ↗</button>
             <span class="status ${db ? "ok" : "warn"}">${db ? "已連線 Supabase" : "未設定 Supabase"}</span>

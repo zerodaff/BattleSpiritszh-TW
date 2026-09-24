@@ -137,6 +137,12 @@ img { display: block; }
   color: #fff;
 }
 
+.source-button.shop-button {
+  border-color: #dc2626;
+  background: #dc2626;
+  color: #000;
+}
+
 .icon-button {
   width: 42px;
   min-width: 42px;
@@ -267,7 +273,7 @@ img { display: block; }
 }
 
 .set-filter-category + .set-filter-category {
-  margin-top: 10px;
+  margin-top: 4px;
 }
 
 .set-filter-category-title {
@@ -275,7 +281,9 @@ img { display: block; }
   border-radius: 5px;
   background: #dc2626;
   color: #fff;
+  font-size: 14px;
   font-weight: 900;
+  text-align: center;
 }
 
 .set-filter-section {
@@ -295,6 +303,7 @@ img { display: block; }
   background: transparent;
   color: var(--text);
   font: inherit;
+  font-size: 13px;
   font-weight: 700;
   text-align: left;
   cursor: pointer;
@@ -1665,7 +1674,7 @@ img { display: block; }
   }
 
   .set-filter-category-title {
-    font-size: 12px;
+    font-size: 11px;
   }
 
   .set-filter-section-toggle {

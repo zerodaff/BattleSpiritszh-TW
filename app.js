@@ -5,6 +5,22 @@
   const SUPABASE_TABLE = config.supabaseTable || "cards";
   const STORAGE_KEY = "bs-card-browser.deck.v5";
   const MAX_CARD_COPIES = 3;
+  const SET_CATEGORY_ORDER = ["本家", "合作", "詩姬", "未分類"];
+  const SET_SECTION_ORDER = ["預組", "補充", "其他"];
+  const SET_CLASSIFICATION_FALLBACK = {
+    "26RBS01": ["本家", "補充"],
+    "26RBS02": ["本家", "補充"],
+    "26RSD01": ["本家", "預組"],
+    "26RSD02": ["本家", "預組"],
+    "26RSD03": ["本家", "預組"],
+    "26RSD04": ["本家", "預組"],
+    "26RSD05": ["本家", "預組"],
+    "26RSD06": ["本家", "預組"],
+    "26RCB01": ["合作", "補充"],
+    "26RSD07": ["合作", "預組"],
+    "26RSD08": ["詩姬", "預組"],
+    "26RDB01": ["詩姬", "補充"]
+  };
 
   const db =
     SUPABASE_URL && SUPABASE_ANON_KEY && window.supabase
@@ -58,6 +74,7 @@
       cost: []
     },
     openFilter: null,
+    expandedSetSections: new Set(),
     cards: [],
     cardById: new Map(),
     sets: [],
@@ -139,7 +156,16 @@
       .order("code", { ascending: true });
 
     if (error) throw error;
-    state.sets = data || [];
+    state.sets = (data || []).map(normalizeSet);
+  }
+
+  function normalizeSet(set) {
+    const fallback = SET_CLASSIFICATION_FALLBACK[set.code] || ["未分類", "其他"];
+    return {
+      ...set,
+      set_category: normalizeTextBlock(set.set_category || fallback[0]) || "未分類",
+      set_section: normalizeTextBlock(set.set_section || fallback[1]) || "其他"
+    };
   }
 
   async function loadCards() {
@@ -348,6 +374,37 @@
     return [...ordered, ...extras];
   }
 
+  function setFilterGroups(setCodes) {
+    const setByCode = new Map(state.sets.map((set) => [set.code, set]));
+    const groups = new Map();
+
+    for (const code of setCodes) {
+      const set = normalizeSet(setByCode.get(code) || { code });
+      const category = set.set_category || "未分類";
+      const section = set.set_section || "其他";
+      if (!groups.has(category)) groups.set(category, new Map());
+      const sections = groups.get(category);
+      if (!sections.has(section)) sections.set(section, []);
+      sections.get(section).push(code);
+    }
+
+    const orderedNames = (names, preferred) => [
+      ...preferred.filter((name) => names.includes(name)),
+      ...names.filter((name) => !preferred.includes(name)).sort((a, b) => a.localeCompare(b, "zh-Hant"))
+    ];
+
+    return orderedNames([...groups.keys()], SET_CATEGORY_ORDER).map((category) => {
+      const sections = groups.get(category);
+      return {
+        category,
+        sections: orderedNames([...sections.keys()], SET_SECTION_ORDER).map((section) => ({
+          section,
+          codes: sections.get(section)
+        }))
+      };
+    });
+  }
+
   function render() {
     const visibleCards = getVisibleCards();
     const setCodes = setCodeOptions();
@@ -380,7 +437,7 @@
                   </div>
                   <div class="filter-controls">
                     ${sortDropdownHtml()}
-                    ${filterDropdownHtml("set_code", "編號", setCodes)}
+                    ${setCodeFilterHtml(setCodes)}
                     ${filterDropdownHtml("color", "顏色", orderedValues("color", ["紅", "紫", "綠", "白", "黃", "藍"]))}
                     ${filterDropdownHtml("type", "種類", orderedValues("type", ["【戰魂】", "【核心】", "【魔法】"]))}
                     ${filterDropdownHtml("system", "前綴", uniqueValues("system", false, false))}
@@ -527,12 +584,14 @@
               <tr class="set-row" draggable="true" data-set-index="${index}">
                 <td>${escapeHtml(set.code || "")}</td>
                 <td>${escapeHtml(set.name || "")}</td>
+                <td>${escapeHtml(set.set_category || "未分類")}</td>
+                <td>${escapeHtml(set.set_section || "其他")}</td>
                 <td>${set.sort_order ?? 0}</td>
               </tr>
             `
           )
           .join("")
-      : `<tr><td colspan="3">沒有卡包資料</td></tr>`;
+      : `<tr><td colspan="5">沒有卡包資料</td></tr>`;
 
     return `
       <div class="admin-grid">
@@ -543,7 +602,7 @@
           </div>
           <div class="admin-table-scroll">
             <table class="admin-table">
-              <thead><tr><th>Code</th><th>Name</th><th>Sort</th></tr></thead>
+              <thead><tr><th>Code</th><th>Name</th><th>大分類</th><th>小分類</th><th>Sort</th></tr></thead>
               <tbody>${setRows}</tbody>
             </table>
           </div>
@@ -918,6 +977,12 @@
         const field = target.dataset.filter || "";
         state.openFilter = state.openFilter === field ? null : field;
         renderPreservingScroll();
+      } else if (action === "toggle-set-section") {
+        const key = target.dataset.setSectionKey || "";
+        if (state.expandedSetSections.has(key)) state.expandedSetSections.delete(key);
+        else state.expandedSetSections.add(key);
+        state.openFilter = "set_code";
+        renderPreservingScroll();
       } else if (action === "set-card-sort") {
         state.cardSortMode = target.dataset.sortMode === "cost-asc" ? "cost-asc" : "default";
         state.openFilter = null;
@@ -1204,6 +1269,9 @@
 
   function formatImportError(error) {
     const message = error?.message || "未知錯誤";
+    if (message.includes("set_category") || message.includes("set_section")) {
+      return "Supabase 尚未建立卡包分類欄位。請先在 SQL Editor 執行 set-classification-migration.sql，再重新匯入。";
+    }
     if (message.includes("row-level security")) {
       return "Supabase RLS 擋住寫入。請確認目前登入帳號在 profiles 表 role='admin'，並在 Supabase SQL Editor 重跑 supabase.sql 內的 cards/sets admin policy。";
     }
@@ -1246,6 +1314,8 @@
       effect: value("Effect"),
       color: value("Color"),
       image_url: value("ImageUrl"),
+      set_category: value("set_category"),
+      set_section: value("set_section"),
       sheetName
     });
   }
@@ -1262,6 +1332,8 @@
       effect: normalizeTextBlock(row[7] ?? ""),
       color: normalizeTextBlock(row[8] ?? ""),
       image_url: normalizeTextBlock(row[9] ?? ""),
+      set_category: normalizeTextBlock(row[10] ?? ""),
+      set_section: normalizeTextBlock(row[11] ?? ""),
       sheetName
     });
   }
@@ -1279,6 +1351,8 @@
       effect: card.effect,
       color: card.color,
       image_url: card.image_url,
+      _set_category: card.set_category || "",
+      _set_section: card.set_section || "",
       source: "bandai",
       is_active: true
     };
@@ -1290,14 +1364,29 @@
   }
 
   async function upsertSetsFromCards(cards) {
-    const setCodes = [...new Set(cards.map((card) => card.set_code).filter(Boolean))].sort();
-    const payload = setCodes
-      .sort()
-      .map((code, index) => ({
+    const importedSets = new Map();
+    for (const card of cards) {
+      if (!card.set_code || importedSets.has(card.set_code)) continue;
+      importedSets.set(card.set_code, {
+        set_category: card._set_category || "",
+        set_section: card._set_section || ""
+      });
+    }
+
+    const setCodes = [...importedSets.keys()];
+    const existingByCode = new Map(state.sets.map((set) => [set.code, set]));
+    let nextSortOrder = state.sets.reduce((max, set) => Math.max(max, Number(set.sort_order) || 0), 0) + 1;
+    const payload = setCodes.map((code) => {
+      const existing = existingByCode.get(code);
+      const classification = importedSets.get(code);
+      return {
         code,
-        name: `Battle Spirits ${code}`,
-        sort_order: index + 1
-      }));
+        name: existing?.name || `Battle Spirits ${code}`,
+        sort_order: existing ? Number(existing.sort_order) || 0 : nextSortOrder++,
+        set_category: classification.set_category || existing?.set_category || "未分類",
+        set_section: classification.set_section || existing?.set_section || "其他"
+      };
+    });
 
     if (!payload.length) return [];
     const { error } = await db.from("sets").upsert(payload, { onConflict: "code" });
@@ -1308,7 +1397,7 @@
   async function upsertCards(cards) {
     const batchSize = 200;
     for (let index = 0; index < cards.length; index += batchSize) {
-      const batch = cards.slice(index, index + batchSize);
+      const batch = cards.slice(index, index + batchSize).map(({ _set_category, _set_section, ...card }) => card);
       const { error } = await db.from(SUPABASE_TABLE).upsert(batch, { onConflict: "card_number" });
       if (error) throw error;
     }
@@ -1521,6 +1610,59 @@
             ? `<div class="filter-menu" data-filter-menu="${escapeHtml(id)}">${options}</div>`
             : ""
         }
+      </div>
+    `;
+  }
+
+  function setCodeFilterHtml(setCodes) {
+    const selected = state.filters.set_code || [];
+    const active = selected.length > 0;
+    const buttonLabel = active ? `編號 (${selected.length})` : "編號";
+    const groups = setFilterGroups(setCodes);
+    const content = groups.length
+      ? groups.map(({ category, sections }) => `
+          <section class="set-filter-category">
+            <div class="set-filter-category-title">${escapeHtml(category)}</div>
+            ${sections.map(({ section, codes }) => {
+              const key = `${category}::${section}`;
+              const expanded = state.expandedSetSections.has(key);
+              const selectedCount = codes.filter((code) => selected.includes(code)).length;
+              return `
+                <div class="set-filter-section">
+                  <button
+                    class="set-filter-section-toggle"
+                    data-action="toggle-set-section"
+                    data-set-section-key="${escapeHtml(key)}"
+                    type="button"
+                    aria-expanded="${expanded}"
+                  >
+                    <span>${escapeHtml(section)}${selectedCount ? ` (${selectedCount})` : ""}</span>
+                    <strong aria-hidden="true">${expanded ? "−" : "+"}</strong>
+                  </button>
+                  ${expanded ? `<div class="set-filter-options">
+                    ${codes.map((code) => `
+                      <label class="filter-option set-filter-option">
+                        <input type="checkbox" data-filter-field="set_code" value="${escapeHtml(code)}" ${selected.includes(code) ? "checked" : ""} />
+                        <span>${escapeHtml(code)}</span>
+                      </label>
+                    `).join("")}
+                  </div>` : ""}
+                </div>
+              `;
+            }).join("")}
+          </section>
+        `).join("")
+      : `<div class="filter-empty">沒有選項</div>`;
+
+    return `
+      <div class="filter-dropdown filter-dropdown-set_code">
+        <button class="filter-button ${active ? "active" : ""}" data-action="toggle-filter" data-filter="set_code" type="button">
+          <span>${escapeHtml(buttonLabel)}</span>
+          <span class="chevron"></span>
+        </button>
+        ${state.openFilter === "set_code"
+          ? `<div class="filter-menu set-filter-menu" data-filter-menu="set_code">${content}</div>`
+          : ""}
       </div>
     `;
   }

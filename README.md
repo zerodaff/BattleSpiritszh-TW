@@ -8,6 +8,7 @@ It is designed to work with Supabase as the backend so you can keep updating car
 
 - Search cards by number, name, and effect
 - Filter by set, type, system, suffix, color, rarity, and cost
+- Group set filters by category and section with collapsible controls
 - View card details in a modal
 - Add and remove cards from a local deck
 - Preview the deck layout
@@ -23,6 +24,8 @@ Use [`supabase.sql`](./supabase.sql) to create:
 - `profiles`
 - `decks`
 - `deck_cards`
+
+For an existing database, run `set-classification-migration.sql` before importing a workbook with `set_category` and `set_section`.
 
 ## Excel import mapping
 

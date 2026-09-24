@@ -259,6 +259,69 @@ img { display: block; }
   max-width: 224px;
 }
 
+.set-filter-menu {
+  width: 250px;
+  min-width: 250px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 8px;
+}
+
+.set-filter-category + .set-filter-category {
+  margin-top: 10px;
+}
+
+.set-filter-category-title {
+  padding: 6px 9px;
+  border-radius: 5px;
+  background: #dc2626;
+  color: #fff;
+  font-weight: 900;
+}
+
+.set-filter-section {
+  margin-top: 4px;
+}
+
+.set-filter-section-toggle {
+  width: 100%;
+  min-height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 9px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.set-filter-section-toggle:hover,
+.set-filter-section-toggle[aria-expanded="true"] {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.set-filter-section-toggle strong {
+  width: 18px;
+  color: #93c5fd;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+}
+
+.set-filter-options {
+  padding-left: 14px;
+  border-left: 2px solid rgba(96, 165, 250, 0.5);
+}
+
+.set-filter-option {
+  min-height: 32px;
+}
+
 .filter-option {
   /* 下拉選單內每一列 checkbox 選項。 */
   display: flex;
@@ -1594,6 +1657,20 @@ img { display: block; }
     width: max-content;
     min-width: 160px;
     max-width: min(280px, calc(100vw - 48px));
+  }
+
+  .set-filter-menu {
+    width: min(250px, calc(100vw - 32px));
+    min-width: min(250px, calc(100vw - 32px));
+  }
+
+  .set-filter-category-title {
+    font-size: 12px;
+  }
+
+  .set-filter-section-toggle {
+    min-height: 30px;
+    font-size: 11px;
   }
 
   .filter-option {

@@ -6,10 +6,15 @@ create table if not exists public.sets (
   id uuid primary key default gen_random_uuid(),
   code text not null unique,
   name text not null default '',
+  set_category text not null default '未分類',
+  set_section text not null default '其他',
   sort_order integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+alter table public.sets add column if not exists set_category text not null default '未分類';
+alter table public.sets add column if not exists set_section text not null default '其他';
 
 create table if not exists public.cards (
   id uuid primary key default gen_random_uuid(),
@@ -267,8 +272,8 @@ $$;
 
 grant execute on function public.register_site_visit() to anon, authenticated;
 
-insert into public.sets (code, name, sort_order)
+insert into public.sets (code, name, set_category, set_section, sort_order)
 values
-  ('26RBS01', 'Battle Spirits 26RBS01', 1),
-  ('26RCB01', 'Battle Spirits 26RCB01', 2)
+  ('26RBS01', 'Battle Spirits 26RBS01', '本家', '補充', 1),
+  ('26RCB01', 'Battle Spirits 26RCB01', '合作', '補充', 2)
 on conflict (code) do nothing;

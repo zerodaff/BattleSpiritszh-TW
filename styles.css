@@ -176,7 +176,7 @@ img { display: block; }
   grid-template-columns: minmax(240px, 0.36fr) minmax(0, 1fr);
   align-items: center;
   gap: 10px;
-  margin: 0 0 14px;
+  margin: 0 0 7px;
   padding: 10px 12px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -460,7 +460,7 @@ img { display: block; }
   grid-template-rows: minmax(0, 1fr);
   min-height: 0;
   overflow: hidden;
-  padding: 14px;
+  padding: 7px 14px 14px;
 }
 
 .catalog-body {

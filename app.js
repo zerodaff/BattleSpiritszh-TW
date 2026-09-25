@@ -481,8 +481,8 @@
         </main>
       </div>
       ${state.view === "admin" ? "" : `<button class="back-to-top ${state.deckCollapsed ? "" : "is-deck-open"}" data-action="scroll-top" aria-label="回到最上面"></button>`}
-      ${renderModal()}
       ${renderDeckDetails()}
+      ${renderModal()}
       ${renderPreview()}
     `;
   }
@@ -697,8 +697,18 @@
         if (!card) return "";
 
         return `
-          <article class="card deck-detail-card ${cardColorClass(card.color)}">
-            <img class="card-image" src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.card_name)}" loading="lazy" />
+          <article
+            class="card deck-detail-card ${cardColorClass(card.color)}"
+          >
+            <button
+              class="deck-detail-image-button"
+              data-action="view-card"
+              data-id="${escapeHtml(card.id)}"
+              title="查看卡片詳情"
+              aria-label="查看 ${escapeHtml(card.card_name)} 詳情"
+            >
+              <img class="card-image" src="${escapeHtml(card.image_url)}" alt="${escapeHtml(card.card_name)}" loading="lazy" />
+            </button>
             <div class="card-body">
               <div class="card-topline">
                 <div class="card-number">${escapeHtml(card.card_number)}</div>

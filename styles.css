@@ -1135,6 +1135,27 @@ img { display: block; }
   width: min(1600px, 100%);
 }
 
+.deck-detail-image-button {
+  display: block;
+  width: fit-content;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.deck-detail-image-button:focus-visible {
+  outline: 3px solid #60a5fa;
+  outline-offset: 3px;
+}
+
+.deck-detail-image-button .card-image {
+  display: block;
+}
+
 .deck-details-head {
   align-items: center;
   padding-bottom: 12px;

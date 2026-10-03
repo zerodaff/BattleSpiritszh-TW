@@ -324,7 +324,7 @@
 
   function matchesFilter(field, value) {
     const selected = state.filters[field] || [];
-    return selected.length === 0 || selected.includes(String(value || ""));
+    return selected.length === 0 || selected.includes(String(value ?? ""));
   }
 
   function matchesAffixFilters(card, exceptField = "") {
@@ -358,7 +358,7 @@
 
   function uniqueValues(field, numeric = false, includeBlank = true) {
     const sourceCards = state.cards.filter((card) => matchesActiveFilters(card, field));
-    const values = [...new Set(sourceCards.map((card) => String(card[field] || "")).filter(Boolean))];
+    const values = [...new Set(sourceCards.map((card) => String(card[field] ?? "")).filter((value) => value !== ""))];
     const sorted = values.sort(numeric ? (a, b) => Number(a) - Number(b) : (a, b) => a.localeCompare(b, "zh-Hant"));
     return includeBlank ? ["", ...sorted] : sorted;
   }
@@ -404,9 +404,16 @@
         category,
         sections: orderedNames([...sections.keys()], SET_SECTION_ORDER).map((section) => ({
           section,
-          codes: sections.get(section)
+          codes: [...sections.get(section)].sort(compareSetCodes)
         }))
       };
+    });
+  }
+
+  function compareSetCodes(a, b) {
+    return String(a).localeCompare(String(b), "en", {
+      numeric: true,
+      sensitivity: "base"
     });
   }
 
@@ -633,7 +640,7 @@
               選擇 Excel 並同步
               <input id="importExcelInput" type="file" accept=".xlsx,.xls" />
             </label>
-            <div class="muted">${escapeHtml(state.adminImportStatus || "支援有表頭或固定欄位順序的 Excel，會 upsert 到 Supabase。")}</div>
+            <div class="muted">${escapeHtml(state.adminImportStatus || "支援有表頭或固定欄位順序的 Excel；相同 Code 或 Name 會保留原本排序，新卡包才排到最後。")}</div>
           </div>
         </section>
       </div>
@@ -1335,6 +1342,7 @@
       effect: value("Effect"),
       color: value("Color"),
       image_url: value("ImageUrl"),
+      set_name: value("SetName") || value("set_name"),
       set_category: value("set_category"),
       set_section: value("set_section"),
       sheetName
@@ -1356,6 +1364,7 @@
       image_url: normalizeTextBlock(row[10] ?? ""),
       set_category: normalizeTextBlock(row[11] ?? ""),
       set_section: normalizeTextBlock(row[12] ?? ""),
+      set_name: normalizeTextBlock(row[13] ?? ""),
       sheetName
     });
   }
@@ -1374,6 +1383,7 @@
       effect: card.effect,
       color: card.color,
       image_url: card.image_url,
+      _set_name: card.set_name || "",
       _set_category: card.set_category || "",
       _set_section: card.set_section || "",
       source: "bandai",
@@ -1391,20 +1401,27 @@
     for (const card of cards) {
       if (!card.set_code || importedSets.has(card.set_code)) continue;
       importedSets.set(card.set_code, {
+        set_name: card._set_name || "",
         set_category: card._set_category || "",
         set_section: card._set_section || ""
       });
     }
 
     const setCodes = [...importedSets.keys()];
-    const existingByCode = new Map(state.sets.map((set) => [set.code, set]));
-    let nextSortOrder = state.sets.reduce((max, set) => Math.max(max, Number(set.sort_order) || 0), 0) + 1;
+    const { data: latestSets, error: setsError } = await db.from("sets").select("*");
+    if (setsError) throw setsError;
+
+    const existingSets = (latestSets || []).map(normalizeSet);
+    const existingByCode = new Map(existingSets.map((set) => [set.code, set]));
+    const existingByName = uniqueSetsByName(existingSets);
+    let nextSortOrder = existingSets.reduce((max, set) => Math.max(max, Number(set.sort_order) || 0), 0) + 1;
     const payload = setCodes.map((code) => {
-      const existing = existingByCode.get(code);
       const classification = importedSets.get(code);
+      const importedName = classification.set_name || `Battle Spirits ${code}`;
+      const existing = existingByCode.get(code) || existingByName.get(normalizeSetName(importedName));
       return {
         code,
-        name: existing?.name || `Battle Spirits ${code}`,
+        name: classification.set_name || existing?.name || `Battle Spirits ${code}`,
         sort_order: existing ? Number(existing.sort_order) || 0 : nextSortOrder++,
         set_category: classification.set_category || existing?.set_category || "未分類",
         set_section: classification.set_section || existing?.set_section || "其他"
@@ -1420,10 +1437,29 @@
   async function upsertCards(cards) {
     const batchSize = 200;
     for (let index = 0; index < cards.length; index += batchSize) {
-      const batch = cards.slice(index, index + batchSize).map(({ _set_category, _set_section, ...card }) => card);
+      const batch = cards.slice(index, index + batchSize).map(({ _set_name, _set_category, _set_section, ...card }) => card);
       const { error } = await db.from(SUPABASE_TABLE).upsert(batch, { onConflict: "card_number" });
       if (error) throw error;
     }
+  }
+
+  function normalizeSetName(value) {
+    return normalizeTextBlock(value).toLocaleLowerCase("zh-Hant");
+  }
+
+  function uniqueSetsByName(sets) {
+    const matches = new Map();
+    const duplicates = new Set();
+
+    for (const set of sets) {
+      const name = normalizeSetName(set.name);
+      if (!name) continue;
+      if (matches.has(name)) duplicates.add(name);
+      else matches.set(name, set);
+    }
+
+    for (const name of duplicates) matches.delete(name);
+    return matches;
   }
 
   async function deleteObsoleteCards(cards) {

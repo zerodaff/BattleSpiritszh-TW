@@ -43,10 +43,12 @@ python .\scripts\import_excel_to_supabase.py .\26RBS.xlsx
 - `CardName` -> `card_name`
 - `Type` -> `type`
 - `System` -> `system`
+- `Infix` -> `infix`（可留空）
 - `Suffix` -> `suffix`
 - `Effect` -> `effect`
 - `Color` -> `color`
 - `ImageUrl` -> `image_url`
+- `SetName` -> `sets.name`（可留空）
 - `set_category` -> `sets.set_category`
 - `set_section` -> `sets.set_section`
 
@@ -54,4 +56,6 @@ python .\scripts\import_excel_to_supabase.py .\26RBS.xlsx
 
 第一次使用分類欄位前，請先在 Supabase SQL Editor 執行 `set-classification-migration.sql`。
 
-匯入時不會重排既有卡包的 `sort_order`；只有新卡包會依 Excel 工作表順序排到最後。
+第一次匯入含有 `Infix` 欄位的 Excel 前，請先執行 `infix-migration.sql`。
+
+匯入前會重新讀取 Supabase 的卡包清單；相同 `Code`，或唯一且相同的 `SetName`，都會保留既有 `sort_order`。只有真正的新卡包會依 Excel 工作表順序排到最後。

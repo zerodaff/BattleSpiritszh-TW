@@ -802,7 +802,7 @@
           <div class="section-head">
             <h2>目前牌組預覽</h2>
             <div class="preview-actions">
-              <button class="button" data-action="open-preview-image">開啟圖片</button>
+              <button class="button" data-action="open-preview-image">匯出牌組</button>
               <button class="button" data-action="close-preview">關閉</button>
             </div>
           </div>

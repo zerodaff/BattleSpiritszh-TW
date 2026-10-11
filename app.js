@@ -5,6 +5,8 @@
   const SUPABASE_TABLE = config.supabaseTable || "cards";
   const STORAGE_KEY = "bs-card-browser.deck.v5";
   const MAX_CARD_COPIES = 3;
+  const DECK_IMAGE_MANIFEST_KEY = "bs-deck-v1";
+  const DECK_QR_PREFIX = "BSD2|";
   const SET_CATEGORY_ORDER = ["本家", "合作", "詩姬", "未分類"];
   const SET_SECTION_ORDER = ["預組", "補充", "其他"];
   const SET_CLASSIFICATION_FALLBACK = {
@@ -87,6 +89,22 @@
     selectedCard: null,
     previewOpen: false,
     deckDetailsOpen: false,
+    deckImportChooserOpen: false,
+    deckPaste: {
+      open: false,
+      file: null,
+      previewUrl: ""
+    },
+    deckImport: {
+      open: false,
+      loading: false,
+      progress: 0,
+      message: "",
+      source: "",
+      fileName: "",
+      recognized: [],
+      unknown: []
+    },
     deckCollapsed: true,
     adminImportStatus: "",
     visitStats: {
@@ -469,8 +487,10 @@
             <div class="deck-head">
               <div class="deck-title">牌組 <span class="count-badge">${deckTotal()}</span></div>
               <div class="deck-head-actions">
+                <button class="button deck-import-btn" data-action="choose-deck-image" title="從牌組圖片匯入">匯入</button>
                 <button class="button danger ghost" data-action="deck-clear">清空</button>
                 <button class="button icon-button deck-collapse-btn" data-action="toggle-deck" aria-label="切換牌組顯示"></button>
+                <input id="deckImageInput" class="visually-hidden" type="file" accept="image/png,.png" />
               </div>
             </div>
             <div class="deck-summary">
@@ -491,6 +511,9 @@
       ${renderDeckDetails()}
       ${renderModal()}
       ${renderPreview()}
+      ${renderDeckImportChooser()}
+      ${renderDeckPasteModal()}
+      ${renderDeckImportModal()}
     `;
   }
 
@@ -789,6 +812,387 @@
     `;
   }
 
+  function renderDeckImportModal() {
+    const importState = state.deckImport;
+    if (!importState.open) return "";
+
+    const recognizedRows = importState.recognized
+      .map(({ card, count, confidence }) => `
+        <div class="deck-import-row">
+          <img src="${escapeHtml(card.image_url)}" alt="" loading="lazy" />
+          <div class="deck-import-card">
+            <strong>${escapeHtml(card.card_number)}</strong>
+            <span>${escapeHtml(card.card_name)}</span>
+          </div>
+          <span class="deck-import-confidence">${confidence === "estimated" ? "請確認" : "已確認"}</span>
+          <strong class="deck-import-count">x${count}</strong>
+        </div>
+      `)
+      .join("");
+
+    const unknownRows = importState.unknown
+      .map((value) => `<span class="deck-import-unknown">${escapeHtml(value)}</span>`)
+      .join("");
+    const importTotal = importState.recognized.reduce(
+      (total, { count }) => total + clampDeckCount(count),
+      0
+    );
+    const progress = Math.max(0, Math.min(100, Math.round(importState.progress * 100)));
+
+    return `
+      <div class="modal-backdrop deck-import-backdrop">
+        <div class="modal deck-import-modal" role="dialog" aria-modal="true" aria-labelledby="deckImportTitle">
+          <div class="section-head">
+            <div>
+              <h2 id="deckImportTitle">從圖片匯入牌組</h2>
+              <div class="deck-import-file">${escapeHtml(importState.fileName)}</div>
+            </div>
+            <button class="button modal-close-btn" data-action="close-deck-import" aria-label="關閉" ${importState.loading ? "disabled" : ""}>X</button>
+          </div>
+          ${importState.loading ? `
+            <div class="deck-import-loading">
+              <strong>${escapeHtml(importState.message || "正在讀取圖片...")}</strong>
+              <div class="deck-import-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="${progress}">
+                <span style="width:${progress}%"></span>
+              </div>
+              <span>${progress}%</span>
+            </div>
+          ` : `
+            <div class="deck-import-summary">
+              <span>辨識方式<strong>${escapeHtml(importState.source || "無")}</strong></span>
+              <span>總張數<strong>${importTotal}</strong></span>
+              <span>無法辨識<strong>${importState.unknown.length}</strong></span>
+            </div>
+            <p class="deck-import-message">${escapeHtml(importState.message)}</p>
+            <div class="deck-import-results">${recognizedRows || `<div class="empty small">沒有可匯入的卡片</div>`}</div>
+            ${unknownRows ? `<div class="deck-import-warning"><strong>未找到卡片：</strong>${unknownRows}</div>` : ""}
+            <div class="deck-import-actions">
+              <button class="button danger deck-import-replace" data-action="apply-deck-import" ${recognizedRows ? "" : "disabled"}>取代目前牌組</button>
+              <button class="button deck-import-cancel" data-action="close-deck-import">取消</button>
+            </div>
+          `}
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDeckImportChooser() {
+    if (!state.deckImportChooserOpen) return "";
+    return `
+      <div class="modal-backdrop deck-import-backdrop">
+        <div class="modal deck-import-choice-modal" role="dialog" aria-modal="true" aria-labelledby="deckImportChoiceTitle">
+          <div class="section-head">
+            <h2 id="deckImportChoiceTitle">匯入牌組圖片</h2>
+            <button class="button modal-close-btn" data-action="close-deck-import-chooser" aria-label="關閉">X</button>
+          </div>
+          <div class="deck-import-choice-actions">
+            <button class="button primary" data-action="paste-deck-image">貼上圖片</button>
+            <button class="button" data-action="open-deck-image-file">開啟檔案</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderDeckPasteModal() {
+    if (!state.deckPaste.open) return "";
+    const hasImage = Boolean(state.deckPaste.file && state.deckPaste.previewUrl);
+    return `
+      <div class="modal-backdrop deck-import-backdrop">
+        <div class="modal deck-paste-modal" role="dialog" aria-modal="true" aria-labelledby="deckPasteTitle">
+          <div class="section-head">
+            <h2 id="deckPasteTitle">貼上牌組圖片</h2>
+            <button class="button modal-close-btn" data-action="close-deck-paste" aria-label="關閉">X</button>
+          </div>
+          <div class="deck-paste-zone ${hasImage ? "has-image" : ""}" tabindex="0" data-paste-zone>
+            ${hasImage
+              ? `<img src="${state.deckPaste.previewUrl}" alt="已貼上的牌組圖片縮圖" />`
+              : `<strong>貼上牌組圖片</strong>
+                 <span>按下按鈕或使用 Ctrl+V，貼上後會先顯示縮圖。</span>
+                 <button class="button primary deck-clipboard-button" data-action="read-deck-clipboard">貼上圖片</button>`}
+          </div>
+          <div class="deck-paste-actions">
+            ${hasImage ? `<button class="button" data-action="reset-deck-paste">重新貼上</button>` : ""}
+            <button class="button" data-action="close-deck-paste">取消</button>
+            ${hasImage ? `<button class="button primary" data-action="confirm-deck-paste">確認匯入</button>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function openDeckPasteModal() {
+    state.deckImportChooserOpen = false;
+    state.deckPaste = { open: true, file: null, previewUrl: "" };
+    renderPreservingScroll();
+    requestAnimationFrame(() => document.querySelector("[data-paste-zone]")?.focus());
+  }
+
+  function closeDeckPasteModal() {
+    state.deckPaste = { open: false, file: null, previewUrl: "" };
+  }
+
+  async function setPastedImagePreview(blob) {
+    const extension = blob.type.split("/")[1] || "png";
+    const file = new File([blob], `pasted-image.${extension}`, { type: blob.type });
+    const previewUrl = await fileToDataUrl(file);
+    state.deckPaste = { open: true, file, previewUrl };
+    renderPreservingScroll();
+    requestAnimationFrame(() => document.querySelector("[data-paste-zone]")?.focus());
+  }
+
+  async function readDeckImageFromClipboard() {
+    if (!navigator.clipboard?.read) {
+      alert("目前瀏覽器不支援按鈕讀取剪貼簿，請使用 Ctrl+V 貼上圖片。");
+      return;
+    }
+
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+      for (const item of clipboardItems) {
+        const imageType = item.types.find((type) => type.startsWith("image/"));
+        if (!imageType) continue;
+        await setPastedImagePreview(await item.getType(imageType));
+        return;
+      }
+      alert("剪貼簿中沒有圖片，請先複製牌組圖片後再按貼上圖片。");
+    } catch (error) {
+      console.error(error);
+      alert("無法讀取剪貼簿圖片，請允許剪貼簿權限，或使用 Ctrl+V 貼上。");
+    }
+  }
+
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error || new Error("圖片預覽失敗"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function handleDeckImageImport(file) {
+    state.deckImportChooserOpen = false;
+    closeDeckPasteModal();
+    state.previewOpen = false;
+    state.deckDetailsOpen = false;
+    state.deckImport = {
+      open: true,
+      loading: true,
+      progress: 0.02,
+      message: "正在讀取圖片...",
+      source: "",
+      fileName: file.name || "剪貼簿圖片",
+      recognized: [],
+      unknown: []
+    };
+    renderPreservingScroll();
+
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const manifestText = file.type === "image/png" || file.name.toLowerCase().endsWith(".png")
+        ? extractPngTextChunk(bytes, DECK_IMAGE_MANIFEST_KEY)
+        : "";
+
+      if (manifestText) {
+        const manifest = JSON.parse(manifestText);
+        const version = Number(manifest.v);
+        const isSupportedExport = version === 1 || (version === 2 && manifest.app === "BattleSpiritszh-TW");
+        if (!Array.isArray(manifest.deck) || !isSupportedExport) {
+          throw new Error("本站牌組資料格式不正確");
+        }
+        const result = mapImportedEntries(manifest.deck, "exact");
+        state.deckImport.source = "本站匯出資料";
+        state.deckImport.recognized = result.recognized;
+        state.deckImport.unknown = result.unknown;
+        state.deckImport.message = "已讀取本站寫入圖片的完整牌組資料，請確認後再匯入。";
+      } else {
+        const qrEntries = await extractDeckEntriesFromQr(file);
+        if (qrEntries.length) {
+          const result = mapImportedEntries(qrEntries, "exact");
+          state.deckImport.source = "本站 QR 牌組資料";
+          state.deckImport.recognized = result.recognized;
+          state.deckImport.unknown = result.unknown;
+          state.deckImport.message = "圖片的隱藏資料已被移除，已改由本站 QR 完整還原牌組。";
+        } else {
+          state.deckImport.source = "非本站匯出圖片";
+          state.deckImport.recognized = [];
+          state.deckImport.unknown = [];
+          state.deckImport.message = "此圖片沒有本站牌組資料或本站 QR，無法匯入。請使用新版網站重新產生牌組圖片。";
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      state.deckImport.source = "讀取失敗";
+      state.deckImport.recognized = [];
+      state.deckImport.unknown = [];
+      state.deckImport.message = `無法讀取這張圖片：${error?.message || "未知錯誤"}`;
+    } finally {
+      state.deckImport.loading = false;
+      state.deckImport.progress = 1;
+      renderPreservingScroll();
+    }
+  }
+
+  function mapImportedEntries(entries, confidence) {
+    const recognized = [];
+    const unknown = [];
+    const byId = new Map();
+
+    entries.forEach((entry) => {
+      const rawNumber = entry?.n ?? entry?.card_number ?? entry?.number ?? "";
+      const card = findCardByNumber(rawNumber);
+      if (!card) {
+        if (rawNumber) unknown.push(String(rawNumber));
+        return;
+      }
+
+      const count = clampDeckCount(entry?.c ?? entry?.count ?? 1);
+      const existing = byId.get(card.id);
+      if (existing) existing.count = Math.min(MAX_CARD_COPIES, existing.count + count);
+      else {
+        const item = { card, count, confidence };
+        byId.set(card.id, item);
+        recognized.push(item);
+      }
+    });
+
+    return { recognized, unknown: [...new Set(unknown)] };
+  }
+
+  function applyDeckImport() {
+    const imported = state.deckImport.recognized.map(({ card, count }) => ({
+      id: card.id,
+      count: clampDeckCount(count)
+    }));
+    if (!imported.length) return;
+
+    if (state.deck.length && !confirm("確定要用圖片內容取代目前牌組嗎？")) return;
+    state.deck = imported;
+
+    saveDeck();
+    state.deckImport.open = false;
+    renderPreservingScroll();
+  }
+
+  function clampDeckCount(value) {
+    return Math.max(1, Math.min(MAX_CARD_COPIES, Number.parseInt(value, 10) || 1));
+  }
+
+  function normalizeCardNumber(value) {
+    return String(value || "")
+      .toUpperCase()
+      .replace(/[‐‑–—]/g, "-")
+      .replace(/\s+/g, "")
+      .replace(/[^A-Z0-9-]/g, "");
+  }
+
+  function findCardByNumber(value) {
+    const normalized = normalizeCardNumber(value);
+    return state.cards.find((card) => normalizeCardNumber(card.card_number) === normalized) || null;
+  }
+
+  function buildDeckQrPayload(items) {
+    const entries = items.map(({ card, count }) => `${normalizeCardNumber(card.card_number)}*${clampDeckCount(count)}`);
+    return `${DECK_QR_PREFIX}${entries.join(",")}`;
+  }
+
+  function parseDeckQrPayload(value) {
+    const text = String(value || "").trim();
+    if (!text.startsWith(DECK_QR_PREFIX)) return [];
+    return text
+      .slice(DECK_QR_PREFIX.length)
+      .split(",")
+      .map((entry) => {
+        const match = entry.match(/^([A-Z0-9-]+)\*([1-3])$/);
+        return match ? { n: match[1], c: Number(match[2]) } : null;
+      })
+      .filter(Boolean);
+  }
+
+  async function extractDeckEntriesFromQr(file) {
+    if (typeof window.jsQR !== "function") throw new Error("QR 讀取元件未載入");
+    const bitmap = await createImageBitmap(file);
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (!ctx) {
+      bitmap.close?.();
+      return [];
+    }
+
+    const attempts = [
+      { topRatio: 0, scale: 1 },
+      { topRatio: 0.5, scale: 1 },
+      { topRatio: 0, scale: 0.75 },
+      { topRatio: 0.35, scale: 0.75 },
+      { topRatio: 0.5, scale: 0.5 }
+    ];
+
+    try {
+      for (const attempt of attempts) {
+        const sourceY = Math.floor(bitmap.height * attempt.topRatio);
+        const sourceHeight = bitmap.height - sourceY;
+        canvas.width = Math.max(1, Math.round(bitmap.width * attempt.scale));
+        canvas.height = Math.max(1, Math.round(sourceHeight * attempt.scale));
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(
+          bitmap,
+          0,
+          sourceY,
+          bitmap.width,
+          sourceHeight,
+          0,
+          0,
+          canvas.width,
+          canvas.height
+        );
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const result = window.jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "attemptBoth"
+        });
+        const entries = parseDeckQrPayload(result?.data);
+        if (entries.length) return entries;
+      }
+      return [];
+    } finally {
+      bitmap.close?.();
+    }
+  }
+
+  function createDeckQr(payload, size) {
+    if (typeof window.qrcode !== "function") throw new Error("QR 產生元件未載入");
+    const qr = window.qrcode(0, "L");
+    qr.addData(payload);
+    qr.make();
+
+    const modules = qr.getModuleCount();
+    const quietModules = 4;
+    const cellSize = Math.max(2, Math.floor(size / (modules + quietModules * 2)));
+    const actualSize = cellSize * (modules + quietModules * 2);
+    return { qr, modules, quietModules, cellSize, actualSize };
+  }
+
+  function drawDeckQr(ctx, qrData, canvasWidth, top) {
+    const { qr, modules, quietModules, cellSize, actualSize } = qrData;
+    const x = Math.round((canvasWidth - actualSize) / 2);
+
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(x, top, actualSize, actualSize);
+    ctx.fillStyle = "#000";
+    for (let row = 0; row < modules; row += 1) {
+      for (let col = 0; col < modules; col += 1) {
+        if (!qr.isDark(row, col)) continue;
+        ctx.fillRect(
+          x + (col + quietModules) * cellSize,
+          top + (row + quietModules) * cellSize,
+          cellSize,
+          cellSize
+        );
+      }
+    }
+    return actualSize;
+  }
+
   async function openPreviewImage() {
     const popup = window.open("", "_blank");
     if (!popup) return;
@@ -862,9 +1266,17 @@
     const codeHeight = 30;
     const gap = 20;
     const padding = 24;
+    const qrPayload = buildDeckQrPayload(items);
+    const qrData = createDeckQr(qrPayload, 240);
+    const qrTopPadding = 14;
+    const qrTextGap = 16;
+    const qrTextHeight = 20;
+    const qrBottomPadding = 10;
+    const qrFooterHeight = qrTopPadding + qrData.actualSize + qrTextGap + qrTextHeight + qrBottomPadding;
     const rows = Math.ceil(items.length / columns);
     const width = padding * 2 + columns * cardWidth + (columns - 1) * gap;
-    const height = padding * 2 + rows * (cardHeight + codeHeight) + (rows - 1) * gap;
+    const cardAreaHeight = padding * 2 + rows * (cardHeight + codeHeight) + (rows - 1) * gap;
+    const height = cardAreaHeight + qrFooterHeight;
     const canvas = document.createElement("canvas");
     const scale = window.devicePixelRatio || 1;
     canvas.width = width * scale;
@@ -877,6 +1289,12 @@
     ctx.fillRect(0, 0, width, height);
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
+
+    const manifestData = {
+      v: 2,
+      app: "BattleSpiritszh-TW",
+      deck: items.map(({ card, count }) => ({ n: card.card_number, c: clampDeckCount(count) }))
+    };
 
     try {
       await Promise.all(items.map(async ({ card, count }, index) => {
@@ -893,7 +1311,25 @@
         ctx.fillText(card.card_number || "", x + cardWidth / 2, y + cardHeight + 20);
       }));
 
-      const imageUrl = canvas.toDataURL("image/png");
+      ctx.fillStyle = "rgba(148, 163, 184, 0.28)";
+      ctx.fillRect(padding, cardAreaHeight, width - padding * 2, 1);
+      const qrTop = cardAreaHeight + qrTopPadding;
+      const actualQrSize = drawDeckQr(ctx, qrData, width, qrTop);
+      ctx.fillStyle = "#e5e7eb";
+      ctx.font = "700 16px 'Noto Sans TC', sans-serif";
+      ctx.fillText(
+        "BS中文牌組資料|可複製圖片後貼回網站做匯入",
+        width / 2,
+        qrTop + actualQrSize + qrTextGap + qrTextHeight / 2
+      );
+
+      const pngBlob = await canvasToBlob(canvas);
+      const pngBytes = new Uint8Array(await pngBlob.arrayBuffer());
+      const manifest = JSON.stringify(manifestData);
+      const imageUrl = await bytesToDataUrl(
+        embedPngTextChunk(pngBytes, DECK_IMAGE_MANIFEST_KEY, manifest),
+        "image/png"
+      );
       renderPreviewImagePage(popup, `<img src="${imageUrl}" alt="牌組預覽圖片" />`, imageUrl, "png");
     } catch (error) {
       popup.document.body.textContent = "PNG 產生失敗，卡圖代理讀取失敗。";
@@ -924,6 +1360,114 @@
         console.error(error);
       }
     });
+  }
+
+  function canvasToBlob(canvas) {
+    return new Promise((resolve, reject) => {
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("PNG 轉換失敗"));
+      }, "image/png");
+    });
+  }
+
+  function bytesToDataUrl(bytes, mimeType) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(reader.error || new Error("圖片資料轉換失敗"));
+      reader.readAsDataURL(new Blob([bytes], { type: mimeType }));
+    });
+  }
+
+  function embedPngTextChunk(pngBytes, keyword, value) {
+    if (!isPng(pngBytes)) throw new Error("不是有效的 PNG 圖片");
+    const keywordBytes = new TextEncoder().encode(keyword);
+    const valueBytes = new TextEncoder().encode(value);
+    const chunkData = new Uint8Array(keywordBytes.length + 1 + valueBytes.length);
+    chunkData.set(keywordBytes, 0);
+    chunkData.set(valueBytes, keywordBytes.length + 1);
+    const textChunk = buildPngChunk("tEXt", chunkData);
+
+    let offset = 8;
+    while (offset + 12 <= pngBytes.length) {
+      const length = readUint32(pngBytes, offset);
+      const type = readAscii(pngBytes, offset + 4, 4);
+      if (type === "IEND") {
+        const output = new Uint8Array(pngBytes.length + textChunk.length);
+        output.set(pngBytes.slice(0, offset), 0);
+        output.set(textChunk, offset);
+        output.set(pngBytes.slice(offset), offset + textChunk.length);
+        return output;
+      }
+      offset += length + 12;
+    }
+    throw new Error("PNG 結構不完整");
+  }
+
+  function extractPngTextChunk(pngBytes, keyword) {
+    if (!isPng(pngBytes)) return "";
+    let offset = 8;
+    while (offset + 12 <= pngBytes.length) {
+      const length = readUint32(pngBytes, offset);
+      const type = readAscii(pngBytes, offset + 4, 4);
+      const dataStart = offset + 8;
+      const dataEnd = dataStart + length;
+      if (dataEnd + 4 > pngBytes.length) return "";
+      if (type === "tEXt") {
+        const chunkData = pngBytes.slice(dataStart, dataEnd);
+        const separator = chunkData.indexOf(0);
+        if (separator > 0 && readAscii(chunkData, 0, separator) === keyword) {
+          return new TextDecoder().decode(chunkData.slice(separator + 1));
+        }
+      }
+      if (type === "IEND") break;
+      offset += length + 12;
+    }
+    return "";
+  }
+
+  function isPng(bytes) {
+    const signature = [137, 80, 78, 71, 13, 10, 26, 10];
+    return bytes.length >= signature.length && signature.every((value, index) => bytes[index] === value);
+  }
+
+  function buildPngChunk(type, data) {
+    const typeBytes = new TextEncoder().encode(type);
+    const output = new Uint8Array(data.length + 12);
+    writeUint32(output, 0, data.length);
+    output.set(typeBytes, 4);
+    output.set(data, 8);
+    const crcInput = new Uint8Array(typeBytes.length + data.length);
+    crcInput.set(typeBytes, 0);
+    crcInput.set(data, typeBytes.length);
+    writeUint32(output, output.length - 4, crc32(crcInput));
+    return output;
+  }
+
+  function readUint32(bytes, offset) {
+    return new DataView(bytes.buffer, bytes.byteOffset + offset, 4).getUint32(0, false);
+  }
+
+  function writeUint32(bytes, offset, value) {
+    new DataView(bytes.buffer, bytes.byteOffset + offset, 4).setUint32(0, value >>> 0, false);
+  }
+
+  function readAscii(bytes, offset, length) {
+    let result = "";
+    for (let index = offset; index < offset + length; index += 1) result += String.fromCharCode(bytes[index]);
+    return result;
+  }
+
+  function crc32(bytes) {
+    let crc = 0xffffffff;
+    for (const byte of bytes) {
+      crc ^= byte;
+      for (let bit = 0; bit < 8; bit += 1) {
+        crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+      }
+    }
+    return (crc ^ 0xffffffff) >>> 0;
   }
 
   function loadImage(src) {
@@ -1037,6 +1581,33 @@
         renderPreservingScroll();
       } else if (action === "open-preview-image") {
         await openPreviewImage();
+      } else if (action === "choose-deck-image") {
+        state.deckImportChooserOpen = true;
+        renderPreservingScroll();
+      } else if (action === "paste-deck-image") {
+        openDeckPasteModal();
+      } else if (action === "read-deck-clipboard") {
+        await readDeckImageFromClipboard();
+      } else if (action === "open-deck-image-file") {
+        document.querySelector("#deckImageInput")?.click();
+      } else if (action === "close-deck-import-chooser") {
+        state.deckImportChooserOpen = false;
+        renderPreservingScroll();
+      } else if (action === "close-deck-paste") {
+        closeDeckPasteModal();
+        renderPreservingScroll();
+      } else if (action === "reset-deck-paste") {
+        state.deckPaste = { open: true, file: null, previewUrl: "" };
+        renderPreservingScroll();
+        requestAnimationFrame(() => document.querySelector("[data-paste-zone]")?.focus());
+      } else if (action === "confirm-deck-paste") {
+        const file = state.deckPaste.file;
+        if (file) await handleDeckImageImport(file);
+      } else if (action === "close-deck-import") {
+        state.deckImport.open = false;
+        renderPreservingScroll();
+      } else if (action === "apply-deck-import") {
+        applyDeckImport();
       } else if (action === "open-external") {
         const url = target.dataset.url || "";
         if (url && confirm("是否連線到外部網站？")) {
@@ -1096,6 +1667,14 @@
         return;
       }
 
+      if (target instanceof HTMLInputElement && target.id === "deckImageInput" && target.files?.[0]) {
+        const file = target.files[0];
+        target.value = "";
+        state.deckImportChooserOpen = false;
+        await handleDeckImageImport(file);
+        return;
+      }
+
       if (target instanceof HTMLInputElement && target.id === "importExcelInput" && target.files?.[0]) {
         try {
           await importExcelToSupabase(target.files[0]);
@@ -1107,6 +1686,15 @@
           target.value = "";
         }
       }
+    });
+
+    document.addEventListener("paste", async (event) => {
+      if (!state.deckPaste.open) return;
+      const imageItem = [...(event.clipboardData?.items || [])].find((item) => item.type.startsWith("image/"));
+      const blob = imageItem?.getAsFile();
+      if (!blob) return;
+      event.preventDefault();
+      await setPastedImagePreview(blob);
     });
 
     document.addEventListener("input", (event) => {

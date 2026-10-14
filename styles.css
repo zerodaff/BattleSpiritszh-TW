@@ -390,16 +390,7 @@ img { display: block; }
 }
 
 .reset-filter-btn {
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
   color: #fca5a5;
-  border-color: var(--line);
-  background: rgba(55, 65, 81, 0.82);
-}
-
-.button.ghost.reset-filter-btn {
   border-color: var(--line);
   background: rgba(55, 65, 81, 0.82);
 }

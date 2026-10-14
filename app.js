@@ -475,7 +475,7 @@
                     ${filterDropdownHtml("suffix", "後綴", uniqueValues("suffix", false, false))}
                     ${filterDropdownHtml("rarity", "稀有度", orderedValues("rarity", ["X", "M", "R", "C"]))}
                     ${filterDropdownHtml("cost", "費用", uniqueValues("cost", true, false))}
-                    <button class="button ghost reset-filter-btn" data-action="reset-filters"><span aria-hidden="true">↻</span>重置</button>
+                    <button class="filter-button reset-filter-btn" data-action="reset-filters" type="button"><span aria-hidden="true">↻</span>重置</button>
                   </div>
                 </section>
               `}
